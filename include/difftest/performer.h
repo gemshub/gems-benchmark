@@ -1,0 +1,62 @@
+#pragma once
+
+#include <memory>
+#include "difftest/diffjson.h"
+
+namespace difftest {
+
+/// Implementation of extracting data from a string of arguments
+/// and organizing comparisons of files or directories.
+class ComparisonPerformer
+{
+public:
+
+    /// These are common commands used in various situations
+    enum MainCommands {
+        Help,
+        CopmpareFiles,
+        CompareDirectories
+    };
+
+    /// Constructor
+    explicit  ComparisonPerformer(int argc, char* argv[]);
+    /// Destructor
+    virtual ~ComparisonPerformer()
+    {}
+
+    /// Execute command
+    virtual int execute_command();
+
+protected:
+
+    /// Command to be execute
+    MainCommands command;
+    /// Recursively compare any subdirectories found
+    bool use_recursion = false;
+
+    /// Template file name in a directory to compare
+    std::string file_name_templ;
+
+    /// Template file or a directory to compare
+    std::string templ_path;
+
+    /// Source file or a directory to compare
+    std::string source_path;
+
+    /// Comparator used to compare two values
+    Comparator compare_method;
+
+    /// Loaded template  - a json  or key-value format file
+    std::shared_ptr<JsonFile> templ_file;
+
+    /// Loaded source  - a json  or key-value format file
+    std::shared_ptr<JsonFile> source_file;
+
+    virtual void show_usage(const std::string& name);
+    virtual bool compare_files(const std::string& ftempl, const std::string& fsource);
+    virtual bool compare_dirs(const std::string& ftempl, const std::string& fsource);
+    virtual int extract_args(int argc, char *argv[]);
+    virtual void set_path(int type, const char *path);
+};
+
+} // namespace difftest
