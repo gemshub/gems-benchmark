@@ -1,3 +1,4 @@
+#include <sstream>
 #include <fstream>
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -20,7 +21,7 @@ std::string make_path(const std::string& dir, const std::string& name, const std
 bool create_directory(const std::string& path)
 {
     fs::path ps(path);
-    return fs::create_directories( ps );
+    return fs::create_directories(ps);
 }
 
 /// Copies a directory, the subdirectories are also copied, with their content, recursively.

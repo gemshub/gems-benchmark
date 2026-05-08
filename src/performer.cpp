@@ -22,7 +22,7 @@ int ComparisonPerformer::execute_command()
 {
     switch(command)  {
     case ComparisonPerformer::Help:
-        show_usage( "jsonioDiff" );
+        show_usage("difftest");
         break;
     case ComparisonPerformer::CopmpareFiles:
         if( compare_files(templ_path, source_path) ) {
@@ -76,7 +76,7 @@ bool ComparisonPerformer::compare_dirs(const std::string &dtempl, const std::str
         if(fs::exists(templ_ps) && fs::exists(source_ps))  {
             for(auto& p: fs::directory_iterator(templ_ps)) {
                 if(fs::is_regular_file(p.path()))  {
-                    std::string file = p.path().filename();
+                    std::string file = p.path().filename().string();
                     if(file_name_templ.empty() || regexp_test(file, file_name_templ)) {
                         std::cout << "file = " << file << std::endl;
                         the_same &= compare_files( dtempl+"/"+file, dsource+"/"+file);
@@ -87,7 +87,7 @@ bool ComparisonPerformer::compare_dirs(const std::string &dtempl, const std::str
             if(use_recursion) {
                 for(auto& p: fs::directory_iterator(templ_ps)) {
                     if(fs::is_directory(p.path())) {
-                        std::string dir = p.path().filename();
+                        std::string dir = p.path().filename().string();
                         std::cout << "dir = " << dir << std::endl;
                         the_same &= compare_dirs( dtempl+"/"+dir, dsource+"/"+dir);
                     }
@@ -99,7 +99,7 @@ bool ComparisonPerformer::compare_dirs(const std::string &dtempl, const std::str
     return the_same;
 }
 
-void ComparisonPerformer::show_usage( const std::string &name )
+void ComparisonPerformer::show_usage(const std::string &name)
 {
     std::cout << "Usage: " << name << " [ option(s) ] -k|-j PATH_TEMPLATE -k|-j PATH_SOURCE"
               << "\nCompare FILES block by block\n"
