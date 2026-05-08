@@ -1,0 +1,14 @@
+name: gems-benchmark
+
+channels:
+  - conda-forge
+
+dependencies:
+  - compilers
+  - cmake>=3.16
+  - ninja
+  - git
+  - ccache
+  - python>=3.10
+  - pip
+  - nlohmann_json
