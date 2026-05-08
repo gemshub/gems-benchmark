@@ -1,0 +1,94 @@
+{
+"doctype": "GEMS3K-dbr-old",
+"key_pattern": "<([^>]*)>",
+"comment_pattern": "#([^\\\n]*)\\\n",
+"eps_number":
+{
+    "compare": "rel_def_more",
+    "eps": 1e-6
+},
+"datafields": [
+{
+    "datakey": "<IterDone>",
+    "ignored": true
+},
+{
+   "datakey": "<IS>",
+   "comment": "Ionic strength, molal",
+   "compare": "sig_dig_less",
+   "eps": 5
+},
+{
+   "datakey": "<rMB>",
+   "comment": "Mass balance residuals, moles",
+   "compare": "abs_def_more",
+   "eps": 1e-13
+},
+{
+   "datakey": "<bIC>",
+   "comment": "Input amounts of independent components, moles",
+   "compare": "sig_dig_less",
+   "eps": 14
+},
+{
+   "datakey": "<uIC>",
+   "comment": "Output normalized chemical potentials of independent components (GEM dual solution)",
+   "compare": "sig_dig_less",
+   "eps": 5
+},
+{
+   "datakey": "<bSP>",
+   "comment": "Output bulk composition of the equilibrium solid part of the system, moles ",
+   "compare": "log_dig_less",
+   "eps": 6
+},
+{
+   "datakey": "<xDC>",
+   "comment": "Output amounts of dependent components (chemical speciation), moles (GEM primal solution)",
+   "compare": "log_dig_less",
+   "eps": 6
+},
+{
+   "datakey": "<gam>",
+   "comment": "Output activity coefficients of dependent components",
+   "compare": "abs_def_more",
+   "eps": 1e-8
+},
+{
+   "datakey": "<xPH>",
+   "comment": "Amounts of phases in equilibrium state, moles (GEM output)",
+   "compare": "rel_def_more",
+   "eps": 1e-6
+},
+{
+   "datakey": "<vPS>",
+   "comment": "Volumes of multicomponent phases, m3 (GEM output)",
+   "compare": "sig_dig_less",
+   "eps": 6
+},
+{
+   "datakey": "<mPS>",
+   "comment": "Masses of multicomponent phases, kg (GEM output)",
+   "compare": "sig_dig_less",
+   "eps": 7
+},
+{
+   "datakey": "<xPA>",
+   "comment": "Masses of multicomponent phases, kg (GEM output)",
+   "compare": "sig_dig_less",
+   "eps": 7
+},
+{
+   "datakey": "<omPH>",
+   "comment": "stability (saturation) indices of phases in log10 scale, can change in GEM",
+   "compare": "abs_def_more",
+   "eps": 1e-6
+},
+{
+   "datakey": "<bPS>",
+   "comment": "Bulk elemental compositions of multicomponent phases, moles (GEM output)",
+   "compare": "sig_dig_less",
+   "eps": 5
+}
+]
+}
