@@ -115,4 +115,4 @@ nlohmann::json KeyValueJsonFile::parse_json(std::string& value) const
     return jsonval;
 }
 
-} // namespace jsoniodiff
+} // namespace difftest

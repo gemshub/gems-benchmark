@@ -99,12 +99,12 @@ bool path_exist_try_other_ext(std::string& path, const std::string& other_ext)
         ps.replace_extension(other_ext);
         exist_f = fs::exists(ps);
         if(exist_f) {
-            path = ps;
+            path = ps.string();
         }
     } else {
         exist_f = fs::exists(ps);
         if(!exist_f) {
-            auto all_files = files_into_directory(ps.parent_path(), ps.stem());
+            auto all_files = files_into_directory(ps.parent_path().string(), ps.stem().string());
             if(all_files.size() >0) {
                 exist_f = fs::exists(all_files[0]);
                 path = all_files[0];
@@ -114,4 +114,4 @@ bool path_exist_try_other_ext(std::string& path, const std::string& other_ext)
     return exist_f;
 }
 
-} // namespace jsoniodiff
+} // namespace difftest
