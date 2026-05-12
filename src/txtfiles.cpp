@@ -4,6 +4,7 @@
 namespace fs = std::filesystem;
 
 #include "difftest/txtfiles.h"
+#include "difftest/detail.h"
 
 namespace difftest {
 
@@ -44,7 +45,7 @@ void copy_file(const std::string& source, const std::string& target)
 
 
 // Get all  regular file names from the directory.
-std::vector<std::string> files_into_directory(const std::string& directory_path, const std::string& sample)
+std::vector<std::string> files_into_directory_old(const std::string& directory_path, const std::string& sample)
 {
     std::vector<std::string> file_names;
 
@@ -64,6 +65,34 @@ std::vector<std::string> files_into_directory(const std::string& directory_path,
     }
     return file_names;
 }
+
+std::vector<std::string> files_into_directory(const std::string& directory_path,
+                                                const std::string& sample,
+                                                bool recursive)
+{
+    std::vector<std::string> file_names;
+
+    if(!directory_path.empty()) {
+        fs::path ps(directory_path);
+        if(fs::exists(ps))  {
+            for(auto& p: fs::directory_iterator(ps)) {
+                if(fs::is_regular_file(p.path())) {
+                    std::string file = p.path().string();
+                    if( sample.empty() || difftest::regexp_test(file,sample) ) {
+                        file_names.push_back(file);
+                    }
+                }
+                if( recursive && fs::is_directory(p.path()) ) {
+                    std::string dir = p.path().string();
+                    auto files = files_into_directory(dir, sample, recursive);
+                    file_names.insert(file_names.end(), files.begin(), files.end());
+                }
+            }
+        }
+    }
+    return file_names;
+}
+
 
 // Read whole ASCII file into string.
 std::string read_ascii_file(const std::string& file_path)
