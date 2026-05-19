@@ -1,6 +1,7 @@
 # options
 message(STATUS "Building tools")
-file(COPY "${CMAKE_SOURCE_DIR}/Resources/gems3k" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")
+file(COPY "${CMAKE_SOURCE_DIR}/Resources/gems3k" DESTINATION "${CMAKE_BINARY_DIR}/bin")
+file(COPY "${CMAKE_SOURCE_DIR}/Resources/Doc/dbr_diff.json" DESTINATION "${CMAKE_BINARY_DIR}/bin")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
@@ -8,7 +9,8 @@ find_package(Threads REQUIRED)
 
 set(Tools
        thread_test
-       recalc_all)
+       recalc_all
+       compare_dirs)
 
 foreach (toolName ${Tools})
 

@@ -42,10 +42,71 @@ int ComparisonPerformer::execute_command()
     return 0;
 }
 
+void ComparisonPerformer::set_path(MainTypes type, const char *path)
+{
+    if(templ_path.empty()) {
+        templ_type = type;
+        templ_path = path;
+    }
+    else {
+        source_type = type;
+        source_path = path;
+    }
+}
+
+ComparisonPerformer::MainTypes ComparisonPerformer::file_type(const std::string &file, MainTypes def_type)
+{
+    if(file.ends_with(".json")) {
+        return fJSON;
+    }
+    else if(file.ends_with(".dat")) {
+        return fKeyValue;
+    }
+    return def_type;
+}
+
+bool ComparisonPerformer::update_file(MainTypes ftype, const std::string &path, std::shared_ptr<JsonFile>& file)
+{
+    if(!path.empty()) {
+        auto type = file_type(path, ftype);
+        switch(type) {
+        case fJSON:
+            if(file && typeid(file.get()) == typeid(JsonFile)) {
+                file->updatePath(path);
+            }
+            else {
+                file.reset(new JsonFile(path));
+                file->updateTemplateDiff(compare_method);
+                if(!template_diff_json.empty()) {
+                    file->updateTemplateDiff(template_diff_json);
+                }
+            }
+            return true;
+        case fKeyValue:
+            if(file && typeid(file.get()) == typeid(KeyValueJsonFile)) {
+                file->updatePath(path);
+            }
+            else {
+                file.reset(new KeyValueJsonFile(path));
+                file->updateTemplateDiff(compare_method);
+                if(!template_diff_json.empty()) {
+                    file->updateTemplateDiff(template_diff_json);
+                }
+            }
+            return true;
+        case fUndef:
+            break;
+        }
+    }
+    return false;
+}
+
 bool ComparisonPerformer::compare_files(const std::string &ftempl, const std::string &fsource)
 {
-    templ_file->updatePath(ftempl);
-    source_file->updatePath(fsource);
+    if( !update_file(templ_type, ftempl, templ_file) ||
+        !update_file(source_type, fsource, source_file)) {
+        return false;
+    }
 
     if(!templ_file->exist()) {
         std::cout <<  "Template directory (" << Comparator::templ_name << ") : " <<  templ_path << " not exists \n";
@@ -79,7 +140,14 @@ bool ComparisonPerformer::compare_dirs(const std::string &dtempl, const std::str
                     std::string file = p.path().filename().string();
                     if(file_name_templ.empty() || regexp_test(file, file_name_templ)) {
                         std::cout << "file = " << file << std::endl;
-                        the_same &= compare_files( dtempl+"/"+file, dsource+"/"+file);
+
+                        auto ret = compare_files( dtempl+"/"+file, dsource+"/"+file);
+                        if(ret) {
+                            std::cout <<  "Template file (" << dtempl+"/"+file << ") : " <<  templ_path << "\n";
+                            std::cout <<  "Source file (" << dsource+"/"+file << ") : " <<  source_path << "\n";
+                            std::cout <<  "No Difference-------------------------------------------------\n\n\n";
+                        }
+                        the_same &= ret;
                     }
                 }
             }
@@ -126,32 +194,11 @@ void ComparisonPerformer::show_usage(const std::string &name)
               << std::endl;
 }
 
-void ComparisonPerformer::set_path(int type, const char * path)
-{
-    if(templ_path.empty()) {
-        templ_path = path;
-        if(type ==0) {
-            templ_file = std::make_shared<KeyValueJsonFile>(templ_path);
-        }
-        else {
-            templ_file = std::make_shared<JsonFile>(templ_path);
-        }
-    }
-    else {
-        source_path = path;
-        if(type ==0) {
-            source_file = std::make_shared<KeyValueJsonFile>(source_path);
-        }
-        else {
-            source_file = std::make_shared<JsonFile>(source_path);
-        }
-    }
-}
 
 int ComparisonPerformer::extract_args(int argc, char* argv[])
 {
     int i=0;
-    std::string template_diff_json; // = "template_diff.json"; // default
+    //std::string template_diff_json; // = "template_diff.json"; // default
     std::string eps = std::to_string( std::numeric_limits<double>::epsilon());
 
     for(i = 1; i < argc; ++i) {
@@ -179,7 +226,7 @@ int ComparisonPerformer::extract_args(int argc, char* argv[])
         }
         else if((arg == "-k") || (arg == "--key-value")) {
             if(i + 1 < argc) {
-                set_path( 0, argv[++i]);
+                set_path(fKeyValue, argv[++i]);
             } else {
                 std::cerr << "--key-value option requires one argument." << std::endl;
                 return 1;
@@ -187,7 +234,7 @@ int ComparisonPerformer::extract_args(int argc, char* argv[])
         }
         else if((arg == "-j") || (arg == "--json")) {
             if(i + 1 < argc) {
-                set_path( 1, argv[++i]);
+                set_path(fJSON, argv[++i]);
             } else {
                 std::cerr << "--json option requires one argument." << std::endl;
                 return 1;
@@ -255,20 +302,13 @@ int ComparisonPerformer::extract_args(int argc, char* argv[])
         }
         else {
             while (i + 1 < argc) { // by default we use json file
-                set_path(1, argv[++i]);
+                set_path(fUndef, argv[++i]);
             }
         }
     }
 
-    if( command != Help && (!templ_file || !source_file)) {
+    if( command != Help && (templ_path.empty() || source_path.empty())) {
         return 1;
-    }
-
-    templ_file->updateTemplateDiff(compare_method);
-    source_file->updateTemplateDiff(compare_method);
-    if(!template_diff_json.empty()) {
-        templ_file->updateTemplateDiff(template_diff_json);
-        source_file->updateTemplateDiff(template_diff_json);
     }
 
     return 0;
