@@ -41,10 +41,10 @@ OBJECTS_DIR = obj
 include($$SRC_CPP/difftest.pri)
 
 SOURCES += \
-        #main.cpp \
+        main.cpp \
         #tools/recalc_all.cpp \
         #tools/thread_test.cpp
-        tools/compare_dirs.cpp
+        #tools/compare_dirs.cpp
 
 DISTFILES += \
     doc/template_diff.json \

@@ -1,24 +1,36 @@
 #include <iostream>
-#include "difftest/performer.h"
-
-
-// -f -rd  dbr_diff.json -a  0.1e-6  -j "tst_inf/pHtitr-dbr-0-0000.json"  -j tst_inf/"pHtitr-dbr-0-1.json"
-// -f -rd  dbr_diff.json -a  0.1e-6  -k "tst_inf/pHtitr-dbr-0-0000.dat"  -k "tst_inf/pHtitr-dbr-0-1.dat"
-
-// -f -rd  dbr_diff.json -a  0.1e-6  -j "test_dir/pHtitr-dbr-0-0000.json"  -j "test_dir/Calculated-dbr.json"
-// -d -r -t ".*-dbr-[\d-]*\.dat" -rd  dbr_diff.json -a  0.1e-6  -k Reactoro/v36 -k Reactoro/reac
+#include "difftest/metrics_collector.h"
+#include "GEMS3K/jsonconfig.h"
+#include "difftest/txtfiles.h"
+#include "difftest/detail.h"
 
 int main(int argc, char* argv[])
 {
+
+    gemsSettings().gems3k_update_loggers(false, "test.log", 3);
+
     try {
-        difftest::ComparisonPerformer performer(argc, argv);
-        return performer.execute_command();
+        std::string in_folder = "gems3k";
+        if( argc > 1) {
+            in_folder = argv[1];
+        }
+
+        auto dat_lst_files = difftest::files_into_directory(in_folder, ".*-dat.lst", true);
+
+        for(const auto& file : dat_lst_files) {
+            MetricsCollector task(file);
+            BenchmarkResult data = task.getResult();
+            nlohmann::json js{data};
+            std::cout << js << std::endl;
+        }
+
+        return 0;
     }
     catch(std::exception& e) {
-        std::cerr <<   "std::exception: " << e.what() <<  std::endl;
+        std::cout << "std::exception: " << e.what() <<  std::endl;
     }
     catch(...) {
-       std::cerr <<  "unknown exception" <<  std::endl;
+        std::cout << "unknown exception" <<  std::endl;
     }
-    return 0;
+    return 1;
 }
