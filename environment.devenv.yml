@@ -11,6 +11,10 @@ dependencies:
   - ccache
   - python>=3.10
   - pip
+  - setuptools
+  - wheel
+  - pytest
+  - pybind11
   - nlohmann_json
   - eigen=3.4.0
   - thermofun>=0.5.4
