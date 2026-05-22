@@ -2,6 +2,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+#include "GEMS3K/gems3k_version.h"
 #include "difftest/performer.h"
 #include "difftest/diffkvasjson.h"
 #include "difftest/detail.h"
@@ -308,7 +309,8 @@ int ComparisonPerformer::extract_args(int argc, char* argv[])
     }
 
     if( command != Help && (templ_path.empty() || source_path.empty())) {
-        return 1;
+        templ_path = "gems3k";
+        source_path = templ_path+"-"+GEMS3K_VERSION;
     }
 
     return 0;

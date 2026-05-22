@@ -16,11 +16,11 @@ foreach (toolName ${Tools})
 
     add_executable(${toolName} ${toolName}.cpp)
 
-    if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-        target_link_libraries(${toolName} PUBLIC difftest::difftest GEMS3K::GEMS3K-static Threads::Threads)
-    else()
-        target_link_libraries(${toolName} PUBLIC difftest::difftest GEMS3K::GEMS3K Threads::Threads)
-    endif()
+    #if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+    #    target_link_libraries(${toolName} PUBLIC difftest::difftest GEMS3K::GEMS3K-static Threads::Threads)
+    #else()
+        target_link_libraries(${toolName} PUBLIC difftest::difftest Threads::Threads)
+    #endif()
 
     install(TARGETS ${toolName} DESTINATION bin)
 endforeach()

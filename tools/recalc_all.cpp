@@ -11,6 +11,7 @@
 #include <iostream>
 #include "GEMS3K/nodearray.h"
 #include "GEMS3K/jsonconfig.h"
+#include "GEMS3K/gems3k_version.h"
 #include "difftest/txtfiles.h"
 #include "difftest/detail.h"
 
@@ -77,7 +78,8 @@ int main(int argc, char* argv[])
 
     try{
         std::string in_folder = "gems3k";
-        std::string out_folder = "out-gems3k";
+        std::string out_folder = "gems3k-";
+                    out_folder += GEMS3K_VERSION;
         std::vector<std::string> dat_lst_files;
 
         if( argc > 1) {

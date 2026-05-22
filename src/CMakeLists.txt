@@ -23,6 +23,12 @@ target_include_directories(difftest
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR};${PROJECT_SOURCE_DIR}/src;${PROJECT_SOURCE_DIR}/include>"
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+    target_link_libraries(difftest PUBLIC GEMS3K::GEMS3K-static)
+else()
+    target_link_libraries(difftest PUBLIC GEMS3K::GEMS3K)
+endif()
+
 # Create install target for library
 install(TARGETS difftest
     EXPORT difftestTargets

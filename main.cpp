@@ -1,8 +1,8 @@
 #include <iostream>
-#include "difftest/metrics_collector.h"
 #include "GEMS3K/jsonconfig.h"
+#include "GEMS3K/gems3k_version.h"
+#include "difftest/metrics_collector.h"
 #include "difftest/txtfiles.h"
-#include "difftest/detail.h"
 
 int main(int argc, char* argv[])
 {
@@ -10,7 +10,8 @@ int main(int argc, char* argv[])
     gemsSettings().gems3k_update_loggers(false, "test.log", 3);
 
     try {
-        std::string in_folder = "gems3k";
+        std::string in_folder = "gems3k-";
+                    in_folder += GEMS3K_VERSION;
         if( argc > 1) {
             in_folder = argv[1];
         }
@@ -18,9 +19,12 @@ int main(int argc, char* argv[])
         auto dat_lst_files = difftest::files_into_directory(in_folder, ".*-dat.lst", true);
 
         for(const auto& file : dat_lst_files) {
+            GEMS3KGenerator input_data(file);
             MetricsCollector task(file);
             BenchmarkResult data = task.getResult();
             nlohmann::json js{data};
+            std::ofstream ostr(input_data.get_dir()+"metrics.json");
+            ostr << std::setw(4) << js << std::endl;
             std::cout << js << std::endl;
         }
 

@@ -12,4 +12,6 @@ dependencies:
   - python>=3.10
   - pip
   - nlohmann_json
-  - gems3k>=4.5.2
+  - eigen=3.4.0
+  - thermofun>=0.5.4
+

@@ -146,10 +146,8 @@ void MetricsCollector::process_task(bool warmstart)
     current_convergence.return_status = node->GEM_run(false);
 
     // collect current statistic
-    fReadMULTY read_f = [this](const MULTI& pm){
-        recordIterations(pm);
-        recordConvergence(pm);
-    };
+    recordIterations(node->otherPMM());
+    recordConvergence(node->otherPMM());
     //node->read_MULTY(read_f);
     // add time metrics
 }
