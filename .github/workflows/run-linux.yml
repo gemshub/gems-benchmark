@@ -61,9 +61,6 @@ jobs:
           cmake -GNinja .. -DCMAKE_BUILD_TYPE=Release
           ninja
           ninja install
-          cd .bin
-          ./recalc_all
-          ./collect_metrics
           ls
 
 
