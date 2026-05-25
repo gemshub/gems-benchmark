@@ -61,7 +61,11 @@ jobs:
           cmake -GNinja .. -DCMAKE_BUILD_TYPE=Release
           ninja
           ninja install
+          cd bin
+          ./recalc_all
           ls
+          ./collect_metrics
+
 
 
       - name: Check run
@@ -70,7 +74,7 @@ jobs:
           conda activate gems-benchmark
           cd Resources
           ls
-          sd /usr/share/miniconda/envs/gems-benchmark/bin
+          cd /usr/share/miniconda/envs/gems-benchmark/bin
           ls
           
       - name: Create zip archive for GitHub release
