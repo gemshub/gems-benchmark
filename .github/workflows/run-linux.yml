@@ -62,7 +62,8 @@ jobs:
           ninja
           ninja install
 
-      - name: Check deploy
+      - name: Check run
+        shell: bash -l {0}
         run: |
           conda activate gems-benchmark
           cd Resources
