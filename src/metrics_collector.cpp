@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include "difftest/metrics_collector.h"
 
 
@@ -103,12 +104,14 @@ void MetricsCollector::recordConvergence(const MULTI &pm)
 BenchmarkResult MetricsCollector::getResult()
 {
     BenchmarkResult result;
+    result.system_id = path_to_lst;
+
     if(!init_task(path_to_lst)) {
         // exception or error message
         return result;
     }
 
-    // calc main task
+    // Calc main task
     process_task(true);
     result.iterations = current_iterations;
     result.convergence = current_convergence;
@@ -122,7 +125,7 @@ BenchmarkResult MetricsCollector::getResult()
 
 bool MetricsCollector::init_task(const std::string &path_to_lst)
 {
-    std::cout << "Test path:" << path_to_lst << std::endl;
+    std::cout << "Collect metrics:" << path_to_lst << std::endl;
 
     // Creates TNode structure instance accessible through the "node" pointer
     node.reset(new TNode());
@@ -142,13 +145,16 @@ void MetricsCollector::process_task(bool warmstart)
     // data with GEM IPM3 (already filled out by reading the DBR input file)
     node->pCNode()->NodeStatusCH = warmstart ? NEED_GEM_SIA : NEED_GEM_AIA;
 
-    // re-calculating equilibrium by calling GEMS3K, getting the status back
+    // Re-calculating equilibrium by calling GEMS3K, getting the status back
+    auto t1 = std::chrono::high_resolution_clock::now();
     current_convergence.return_status = node->GEM_run(false);
+    auto t2 = std::chrono::high_resolution_clock::now();
 
-    // collect current statistic
+    // Collect current statistic
     recordIterations(node->otherPMM());
     recordConvergence(node->otherPMM());
-    //node->read_MULTY(read_f);
-    // add time metrics
-}
 
+    // Calculate duration with double precision in milliseconds
+    std::chrono::duration<double, std::milli> run_ms = t2 - t1;
+    current_performance.total_time_ms = run_ms.count();
+}
