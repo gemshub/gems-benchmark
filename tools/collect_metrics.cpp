@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "GEMS3K/jsonconfig.h"
 #include "GEMS3K/gems3k_version.h"
 #include "difftest/metrics_collector.h"
