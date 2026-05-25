@@ -2,7 +2,7 @@ name: ci-build
 on:
   push:
     branches:
-      - develop
+      - develop1
       - master
       - main
   pull_request:

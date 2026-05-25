@@ -64,8 +64,6 @@ jobs:
 
       - name: Check deploy
         run: |
-          cd ${{ github.workspace }}
-          ls
           conda activate gems-benchmark
           cd Resources
           ./recalc_all
