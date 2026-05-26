@@ -78,24 +78,8 @@ public:
         path_to_lst(path)
     {}
 
-    // Timing
-    void startTimer();
-    void stopTimer();
-
-    // Data collection
-    void recordIterations(const MULTI& pm);
-    void recordConvergence(const MULTI& pm);
-    void recordPerformance();
-
     // Results
     BenchmarkResult getResult();
-    void reset();
-
-    bool init_task(const std::string& path_to_lst);
-    void process_task(bool warmstart);
-
-    Statistics benchmark(const std::string& label, int N, fGetInputs perturbf, const std::string& mode="warm");
-
 
 private:
     std::chrono::high_resolution_clock::time_point start_time;
@@ -111,4 +95,16 @@ private:
     double P0;
     std::vector<double> b0;
 
+    // Data collection
+    void recordIterations(const MULTI& pm);
+    void recordConvergence(const MULTI& pm);
+    void recordPerformance();
+    bool init_task(const std::string& path_to_lst);
+    void process_task(bool warmstart);
+    Statistics benchmark(const std::string& label, int N, fGetInputs perturbf, const std::string& mode="warm");
+
+    void reset();
+    // Timing
+    void startTimer();
+    void stopTimer();
 };

@@ -1,5 +1,7 @@
 #include <iostream>
 #include <chrono>
+#include <random>
+#include <algorithm>
 #include "difftest/metrics_collector.h"
 
 static std::vector<double> nothing_change(int, double&, double&, const std::vector<double>& b)
@@ -7,6 +9,20 @@ static std::vector<double> nothing_change(int, double&, double&, const std::vect
     return b;
 }
 
+std::mt19937 rng(42);
+static std::vector<double> perturb_b_randomly(int, double&, double&, const std::vector<double>& b)
+{
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    std::vector<double> perturbed_b{b};
+
+    for(double& val : perturbed_b) {
+        double random_val = dist(rng);
+        double perturb = 1.0 + 0.05 * (random_val - 0.5) * 2.0;
+        val *= perturb;
+    }
+
+    return perturbed_b;
+}
 
 static double get_median(std::vector<double> v)
 {
@@ -147,6 +163,8 @@ BenchmarkResult MetricsCollector::getResult()
     std::cout <<"get time statistic" << std::endl;
     result.stats.push_back(benchmark("A: same input, warm start", 100, nothing_change, "warm"));
     result.stats.push_back(benchmark("D: same input, cold start", 100, nothing_change, "cold"));
+    result.stats.push_back(benchmark("C: composition sweep ±5%, warm", 100, perturb_b_randomly, "warm"));
+    result.stats.push_back(benchmark("E: composition sweep ±5%, cold", 100, perturb_b_randomly, "cold"));
 
     return result;
 }

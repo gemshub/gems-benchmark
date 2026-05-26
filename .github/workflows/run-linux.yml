@@ -2,7 +2,7 @@ name: run-linux
 on:
   push:
     branches:
-      - develop1
+      - develop
 
 jobs:
   build:
@@ -69,6 +69,7 @@ jobs:
           conda activate gems-benchmark
           cd Resources
           recalc_all
+          compare_dirs -d -r -t ".*-dbr-[\d-]*.*" -rd  dbr_diff.json -a  0.1e-6 > compare.log
           collect_metrics
           ls
           
