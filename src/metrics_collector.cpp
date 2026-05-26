@@ -2,6 +2,28 @@
 #include <chrono>
 #include "difftest/metrics_collector.h"
 
+static std::vector<double> nothing_change(int, double&, double&, const std::vector<double>& b)
+{
+    return b;
+}
+
+
+static double get_median(std::vector<double> v)
+{
+    if(v.empty()) {
+        return 0.0;
+    }
+    size_t n = v.size() / 2;
+
+    std::nth_element(v.begin(), v.begin() + n, v.end());
+    if (v.size() % 2 != 0) {
+        return v[n];
+    }
+    else {
+        auto it = std::max_element(v.begin(), v.begin() + n);
+        return (*it + v[n]) / 2.0;
+    }
+}
 
 void to_json(nlohmann::json &j, const IterationMetrics &p) {
     j = nlohmann::json{{"total", p.total_iterations},
@@ -47,15 +69,19 @@ void from_json(const nlohmann::json &j, PerformanceMetrics &p) {
     j.at("per_second").get_to(p.calculations_per_second);
 }
 
-void to_json(nlohmann::json &j, const BenchmarkResult::Statistics &p) {
-    j = nlohmann::json{{"min_time_ms", p.min_time_ms},
+void to_json(nlohmann::json &j, const Statistics &p) {
+    j = nlohmann::json{{"label", p.label},
+                       {"run_number", p.run_number},
+                       {"min_time_ms", p.min_time_ms},
                        {"max_time_ms", p.max_time_ms},
                        {"mean_time_ms", p.mean_time_ms},
                        {"median_time_ms", p.median_time_ms},
                        {"stddev_time_ms", p.stddev_time_ms}};
 }
 
-void from_json(const nlohmann::json &j, BenchmarkResult::Statistics &p) {
+void from_json(const nlohmann::json &j, Statistics &p) {
+    j.at("label").get_to(p.label);
+    j.at("run_number").get_to(p.run_number);
     j.at("min_time_ms").get_to(p.min_time_ms);
     j.at("max_time_ms").get_to(p.max_time_ms);
     j.at("mean_time_ms").get_to(p.mean_time_ms);
@@ -118,7 +144,9 @@ BenchmarkResult MetricsCollector::getResult()
     result.performance = current_performance;
 
     // get time statistic
-    // ....
+    std::cout <<"get time statistic" << std::endl;
+    result.stats.push_back(benchmark("A: same input, warm start", 100, nothing_change, "warm"));
+    result.stats.push_back(benchmark("D: same input, cold start", 100, nothing_change, "cold"));
 
     return result;
 }
@@ -134,6 +162,13 @@ bool MetricsCollector::init_task(const std::string &path_to_lst)
     if( node->GEM_init(path_to_lst.c_str()) ) {
         std::cout << "error occured during reading the files: " << path_to_lst << std::endl;
         return false;
+    }
+
+    T0 = node->Get_TK();
+    P0 = node->Get_P();
+    b0.clear();
+    for(int ii=0; ii<node->pCSD()->nIC; ++ii) {
+        b0.push_back(node->pCNode()->bIC[ii]);
     }
     return true;
 }
@@ -157,4 +192,69 @@ void MetricsCollector::process_task(bool warmstart)
     // Calculate duration with double precision in milliseconds
     std::chrono::duration<double, std::milli> run_ms = t2 - t1;
     current_performance.total_time_ms = run_ms.count();
+}
+
+Statistics MetricsCollector::benchmark(const std::string &label, int N, fGetInputs perturbf, const std::string &mode)
+{
+    //std::vector<IterationMetrics> iters;
+    //std::vector<ConvergenceMetrics> convs;
+    //std::vector<PerformanceMetrics> perfs;
+    std::vector<double> times_ms;
+
+    bool warmstart = (mode=="warm");
+    std::vector<double> perturbed_b = b0;
+    double perturbed_T = T0;
+    double perturbed_P = P0;
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    for(int i = 0; i < N; ++i) {
+        // The composition, T or P sweeps
+        perturbed_T = T0;
+        perturbed_P = P0;
+        perturbed_b = perturbf(i, perturbed_T, perturbed_P, b0);
+
+        // Set temperature and pressure
+        node->Set_TK(perturbed_T);
+        node->Set_P(perturbed_P);
+
+        // Set the mole amounts of the elements
+        for(int ii=0; ii<perturbed_b.size(); ++ii) {
+            node->Set_bIC(ii, perturbed_b[ii]);
+        }
+
+        // Equilibrate
+        process_task(warmstart);
+
+        //iters.push_back(current_iterations);
+        //convs.push_back(current_convergence);
+        //perfs.push_back(current_performance);
+        times_ms.push_back(current_performance.total_time_ms);
+    }
+    auto t_total = std::chrono::high_resolution_clock::now();
+
+    // get statistics
+    Statistics ret_data;
+    ret_data.label = label;
+    ret_data.run_number = N;
+
+    if (!times_ms.empty()) {
+        size_t n = times_ms.size();
+
+        auto minmax = std::minmax_element(times_ms.begin(), times_ms.end());
+        ret_data.min_time_ms = *minmax.first;
+        ret_data.max_time_ms = *minmax.second;
+
+        double sum = std::accumulate(times_ms.begin(), times_ms.end(), 0.0);
+        ret_data.mean_time_ms = sum/n;
+
+        ret_data.median_time_ms = get_median(times_ms);
+
+        double variance_sum = 0.0;
+        for(double t : times_ms) {
+            variance_sum += (t - ret_data.mean_time_ms) * (t - ret_data.mean_time_ms);
+        }
+        ret_data.stddev_time_ms = std::sqrt(variance_sum / n);
+    }
+
+    return ret_data;
 }

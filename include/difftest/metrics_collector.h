@@ -7,8 +7,8 @@
 #include <nlohmann/json.hpp>
 #include "GEMS3K/node.h"
 
-//#include <functional>
-//using  fReadMULTY = std::function<void(const MULTI& pm)>;
+#include <functional>
+using  fGetInputs = std::function<std::vector<double>(int, double&, double&, const std::vector<double>&)>;
 
 
 struct IterationMetrics {
@@ -44,6 +44,17 @@ struct PerformanceMetrics {
 void to_json(nlohmann::json& j, const PerformanceMetrics& p);
 void from_json(const nlohmann::json& j, PerformanceMetrics& p);
 
+// Statistics (across multiple runs)
+struct Statistics {
+    std::string label;
+    int run_number = 0;
+    double min_time_ms = 0.0;
+    double max_time_ms = 0.0;
+    double mean_time_ms = 0.0;
+    double median_time_ms = 0.0;
+    double stddev_time_ms = 0.0;
+};
+
 
 struct BenchmarkResult {
     std::string system_id;
@@ -53,19 +64,11 @@ struct BenchmarkResult {
     ConvergenceMetrics convergence;
     PerformanceMetrics performance;
 
-    // Statistics (across multiple runs)
-    struct Statistics {
-        double min_time_ms = 0.0;
-        double max_time_ms = 0.0;
-        double mean_time_ms = 0.0;
-        double median_time_ms = 0.0;
-        double stddev_time_ms = 0.0;
-    } stats;
-
+    std::vector<Statistics> stats;
 };
 
-void to_json(nlohmann::json &j, const BenchmarkResult::Statistics &p);
-void from_json(const nlohmann::json &j, BenchmarkResult::Statistics &p);
+void to_json(nlohmann::json &j, const Statistics &p);
+void from_json(const nlohmann::json &j, Statistics &p);
 void to_json(nlohmann::json &j, const BenchmarkResult &p);
 void from_json(const nlohmann::json &j, BenchmarkResult &p);
 
@@ -91,6 +94,9 @@ public:
     bool init_task(const std::string& path_to_lst);
     void process_task(bool warmstart);
 
+    Statistics benchmark(const std::string& label, int N, fGetInputs perturbf, const std::string& mode="warm");
+
+
 private:
     std::chrono::high_resolution_clock::time_point start_time;
     std::chrono::high_resolution_clock::time_point stop_time;
@@ -101,4 +107,8 @@ private:
 
     std::string path_to_lst;
     std::shared_ptr<TNode> node;
+    double T0;
+    double P0;
+    std::vector<double> b0;
+
 };
