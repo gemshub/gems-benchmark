@@ -30,9 +30,9 @@ The tests run over several exported test projects ('Resource/gems3k').
 
 1. The order of data fields in the document is arbitrary (but in array fields the order of values is fixed)
 
-2. Comparing floating point numbers choosing epsilon depends on the context, and determines how equal you want the numbers to be.
+2. Comparing floating point numbers, choosing epsilon depends on the context, and determines how equal you want the numbers to be.
 
-3. Any string split by space symbols and compare as string array. If both strings contain numbers, then we compare two double values.
+3. Any string split by space symbols and compare as a string array. If both strings contain numbers, then we compare two double values.
 
 [Difference template file](Resource/Doc/template_diff.md) can be used to set up a custom benchmark.
 
