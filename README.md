@@ -4,7 +4,7 @@ Run benchmark and speed tests calculations for [GEMS3K](https://github.com/gemsh
 A group of test applications is used to verify that the same results are obtained and to assess any improvements in speed, number of iterations, calculations, and convergence.
 
 
-The tests run over several exported test projects ('Resource/gems3k').
+The tests run over several exported test projects (`Resources/gems3k`).
 
 
 ### recalc_all
@@ -34,7 +34,7 @@ The tests run over several exported test projects ('Resource/gems3k').
 
 3. Any string split by space symbols and compare as a string array. If both strings contain numbers, then we compare two double values.
 
-[Difference template file](Resource/Doc/template_diff.md) can be used to set up a custom benchmark.
+[Difference template file](Resources/Doc/template_diff.md) can be used to set up a custom benchmark.
 
 ```sh
 > ./compare_dirs -d -r -t ".*-dbr-[\d-]*.*" -rd  dbr_diff.json -a  0.1e-6 -j gems3k -j gems3k-v4.5.5
