@@ -1,5 +1,5 @@
 # gems-benchmark
-Run benchmark and speed tests calculations for gems
+Run benchmark and speed tests calculations for [GEMS3K](https://github.com/gemshub/GEMS3K.git)
 
 A group of test applications is used to verify that the same results are obtained and to assess any improvements in speed, number of iterations, calculations, and convergence.
 
