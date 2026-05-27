@@ -221,8 +221,8 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, fGetInpu
 
     bool warmstart = (mode=="warm");
     std::vector<double> perturbed_b = b0;
-    double perturbed_T = T0;
-    double perturbed_P = P0;
+    double perturbed_T;
+    double perturbed_P;
 
     auto t0 = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < N; ++i) {

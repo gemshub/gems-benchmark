@@ -23,7 +23,7 @@ int ComparisonPerformer::execute_command()
 {
     switch(command)  {
     case ComparisonPerformer::Help:
-        show_usage("difftest");
+        show_usage("compare_dirs");
         break;
     case ComparisonPerformer::CopmpareFiles:
         if( compare_files(templ_path, source_path) ) {
