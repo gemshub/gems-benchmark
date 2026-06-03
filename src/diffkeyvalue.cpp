@@ -89,7 +89,7 @@ bool KeyValueFile::load_all()
     return true;
 }
 
-bool KeyValueFile::compare_to(const KeyValueFile &templ, Comparator &comp)
+bool KeyValueFile::compare_to(const KeyValueFile &templ, Comparator &comp, std::ostream& out)
 {
     std::string diff_string;
     if(compare_map.empty() && ignored_keys.empty()) {
@@ -98,18 +98,23 @@ bool KeyValueFile::compare_to(const KeyValueFile &templ, Comparator &comp)
             diff_string = comp.getDifference();
         }
     }
-    else  {
+    else {
         diff_string = diff_structured(templ.file_data, file_data, comp);
     }
 
+    out <<  "\n-------------------------------------------------------------\n";
+    out <<  "Template file (" << Comparator::templ_name << ") : " <<  templ.file_path << "\n";
+    out <<  "Source file (" << Comparator::source_name << ") : " <<  file_path << "\n";
+
     if(!diff_string.empty()) {
-        std::cout <<  "Template file (" << Comparator::templ_name << ") : " <<  templ.file_path << "\n";
-        std::cout <<  "Source file (" << Comparator::source_name << ") : " <<  file_path << "\n";
-        std::cout <<  "Difference-------------------------------------------------\n";
-        std::cout <<  diff_string << "\n\n";
+        out <<  "Difference -------------------------------------------------\n";
+        out <<  diff_string << "\n\n";
         return false;
     }
-    return true;
+    else {
+        out <<  "No Difference ------------------------------------------------\n";
+        return true;
+    }
 }
 
 nlohmann::json KeyValueFile::parse_json(std::string& value) const

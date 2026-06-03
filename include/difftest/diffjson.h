@@ -47,7 +47,7 @@ public:
     virtual bool load_all();
 
     /// Compare with template
-    virtual bool compare_to(const JsonFile& templ, const Comparator& comp);
+    virtual bool compare_to(const JsonFile& templ, const Comparator& comp, std::ostream& out);
 
     /// Get json data
     virtual std::string json_string() const

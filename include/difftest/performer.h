@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <iostream>
 #include "difftest/diffjson.h"
 
 namespace difftest {
@@ -67,7 +68,7 @@ protected:
     std::shared_ptr<JsonFile> source_file;
 
     virtual void show_usage(const std::string& name);
-    virtual bool compare_files(const std::string& ftempl, const std::string& fsource);
+    virtual bool compare_files(const std::string& ftempl, const std::string& fsource, std::ostream& out=std::cout);
     virtual bool compare_dirs(const std::string& ftempl, const std::string& fsource);
     virtual int extract_args(int argc, char *argv[]);
     virtual void set_path(MainTypes type, const char *path);

@@ -1,4 +1,4 @@
-#include <iostream>
+#include <fstream>
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -26,11 +26,7 @@ int ComparisonPerformer::execute_command()
         show_usage("compare_dirs");
         break;
     case ComparisonPerformer::CopmpareFiles:
-        if( compare_files(templ_path, source_path) ) {
-            std::cout <<  "Template file (" << Comparator::templ_name << ") : " <<  templ_path << "\n";
-            std::cout <<  "Source file (" << Comparator::source_name << ") : " <<  source_path << "\n";
-            std::cout <<  "No Difference-------------------------------------------------\n";
-        }
+        compare_files(templ_path, source_path, std::cout);
         break;
     case ComparisonPerformer::CompareDirectories:
         if( compare_dirs(templ_path, source_path) ) {
@@ -102,7 +98,7 @@ bool ComparisonPerformer::update_file(MainTypes ftype, const std::string &path, 
     return false;
 }
 
-bool ComparisonPerformer::compare_files(const std::string &ftempl, const std::string &fsource)
+bool ComparisonPerformer::compare_files(const std::string &ftempl, const std::string &fsource, std::ostream& out)
 {
     if( !update_file(templ_type, ftempl, templ_file) ||
         !update_file(source_type, fsource, source_file)) {
@@ -124,7 +120,7 @@ bool ComparisonPerformer::compare_files(const std::string &ftempl, const std::st
 
     templ_file->load_all();
     source_file->load_all();
-    return source_file->compare_to(*templ_file, compare_method);
+    return source_file->compare_to(*templ_file, compare_method, out);
 }
 
 bool ComparisonPerformer::compare_dirs(const std::string &dtempl, const std::string &dsource)
@@ -136,18 +132,14 @@ bool ComparisonPerformer::compare_dirs(const std::string &dtempl, const std::str
         fs::path source_ps(dsource);
 
         if(fs::exists(templ_ps) && fs::exists(source_ps))  {
+            std::ofstream log_file(dsource+"/"+"diff-test.log");
+
             for(auto& p: fs::directory_iterator(templ_ps)) {
                 if(fs::is_regular_file(p.path()))  {
                     std::string file = p.path().filename().string();
                     if(file_name_templ.empty() || regexp_test(file, file_name_templ)) {
                         std::cout << "file = " << file << std::endl;
-
-                        auto ret = compare_files( dtempl+"/"+file, dsource+"/"+file);
-                        if(ret) {
-                            std::cout <<  "Template file (" << dtempl+"/"+file << ") : " <<  templ_path << "\n";
-                            std::cout <<  "Source file (" << dsource+"/"+file << ") : " <<  source_path << "\n";
-                            std::cout <<  "No Difference-------------------------------------------------\n\n\n";
-                        }
+                        auto ret = compare_files( dtempl+"/"+file, dsource+"/"+file, log_file);
                         the_same &= ret;
                     }
                 }

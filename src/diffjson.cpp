@@ -89,18 +89,24 @@ bool JsonFile::load_all()
     return true;
 }
 
-bool JsonFile::compare_to(const JsonFile &templ, const Comparator &comp)
+bool JsonFile::compare_to(const JsonFile &templ, const Comparator &comp, std::ostream& out)
 {
     json_comp = comp;
     std::string diff_string =  diff_json(templ.json_data, json_data);
+
+    out <<  "\n-------------------------------------------------------------\n";
+    out <<  "Template file (" << Comparator::templ_name << ") : " <<  templ.file_path << "\n";
+    out <<  "Source file (" << Comparator::source_name << ") : " <<  file_path << "\n";
+
     if(!diff_string.empty()) {
-        std::cout <<  "Template file (" << Comparator::templ_name << ") : " <<  templ.file_path << "\n";
-        std::cout <<  "Source file (" << Comparator::source_name << ") : " <<  file_path << "\n";
-        std::cout <<  "Difference-------------------------------------------------\n";
-        std::cout <<  diff_string << "\n\n";
+        out <<  "Difference -------------------------------------------------\n";
+        out <<  diff_string << "\n\n";
         return false;
     }
-    return true;
+    else {
+        out <<  "No Difference ------------------------------------------------\n";
+        return true;
+    }
 }
 
 std::string JsonFile::diff_json(const nlohmann::json &lval, const nlohmann::json &rval)
