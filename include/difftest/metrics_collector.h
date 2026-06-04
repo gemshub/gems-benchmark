@@ -49,18 +49,21 @@ void from_json(const nlohmann::json& j, PerformanceMetrics& p);
 // Statistics (across multiple runs)
 struct Statistics {
     std::string label;
-    int run_number = 0;
+    size_t run_number = 0;
+    size_t converged = 0;
     double min_time_ms = 0.0;
     double max_time_ms = 0.0;
     double mean_time_ms = 0.0;
     double median_time_ms = 0.0;
     double stddev_time_ms = 0.0;
+    double iters_min = 0.0;
+    double iters_max = 0.0;
+    double iters_mean = 0.0;
 };
-
 
 struct BenchmarkResult {
     std::string system_id;
-    int run_number = 0;
+    size_t run_number = 0;
 
     IterationMetrics iterations;
     ConvergenceMetrics convergence;
@@ -76,10 +79,9 @@ void from_json(const nlohmann::json &j, BenchmarkResult &p);
 
 class MetricsCollector {
 public:
-    MetricsCollector(std::string path, size_t n=100);
+    MetricsCollector();
 
-    // Results
-    BenchmarkResult getResult();
+    BenchmarkResult getResult(std::string path, size_t n=100);
 
     void set_generator(const std::string& label, fGetInputs func)
     {

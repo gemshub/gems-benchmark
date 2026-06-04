@@ -88,21 +88,30 @@ void from_json(const nlohmann::json &j, PerformanceMetrics &p) {
 void to_json(nlohmann::json &j, const Statistics &p) {
     j = nlohmann::json{{"label", p.label},
                        {"run_number", p.run_number},
+                       {"converged", p.converged},
                        {"min_time_ms", p.min_time_ms},
                        {"max_time_ms", p.max_time_ms},
                        {"mean_time_ms", p.mean_time_ms},
                        {"median_time_ms", p.median_time_ms},
-                       {"stddev_time_ms", p.stddev_time_ms}};
+                       {"stddev_time_ms", p.stddev_time_ms},
+                       {"iters_min", p.iters_min},
+                       {"iters_max", p.iters_max},
+                       {"iters_mean", p.iters_mean},
+                       };
 }
 
 void from_json(const nlohmann::json &j, Statistics &p) {
     j.at("label").get_to(p.label);
     j.at("run_number").get_to(p.run_number);
+    j.at("converged").get_to(p.converged);
     j.at("min_time_ms").get_to(p.min_time_ms);
     j.at("max_time_ms").get_to(p.max_time_ms);
     j.at("mean_time_ms").get_to(p.mean_time_ms);
     j.at("median_time_ms").get_to(p.median_time_ms);
     j.at("stddev_time_ms").get_to(p.stddev_time_ms);
+    j.at("iters_min").get_to(p.iters_min);
+    j.at("iters_max").get_to(p.iters_max);
+    j.at("iters_mean").get_to(p.iters_mean);
 }
 
 void to_json(nlohmann::json &j, const BenchmarkResult &p) {
@@ -143,15 +152,17 @@ void MetricsCollector::recordConvergence(const MULTI &pm)
     current_convergence.dikin_criterion = pm.PCI;
 }
 
-MetricsCollector::MetricsCollector(std::string path, size_t n):
-    path_to_lst(path), N(n)
+MetricsCollector::MetricsCollector():
+    path_to_lst()
 {
     perturb_label = "composition sweep ±5%";
     generate_perturb_set = perturb_b_randomly;
 }
 
-BenchmarkResult MetricsCollector::getResult()
+BenchmarkResult MetricsCollector::getResult(std::string path, size_t n)
 {
+    path_to_lst = path;
+    N = n;
     BenchmarkResult result;
     result.system_id = path_to_lst;
 
@@ -170,15 +181,15 @@ BenchmarkResult MetricsCollector::getResult()
     std::cout <<"get time statistic" << std::endl;
 
     //Generate an iterable of (T, P, b) tuples (composition, T or P sweeps)
-    std::vector<DataTuple> perturbed_tuple;
+    std::vector<DataTuple> perturb_tuple;
     for(int i = 0; i<N; ++i) {
-        perturbed_tuple.push_back(generate_perturb_set(i, T0, P0, b0));
+        perturb_tuple.push_back(generate_perturb_set(i, T0, P0, b0));
     }
 
     result.stats.push_back(benchmark("A: same input", N, {{T0, P0, b0}}, "warm"));
     result.stats.push_back(benchmark("B: same input", N, {{T0, P0, b0}}, "cold"));
-    result.stats.push_back(benchmark("C: "+perturb_label, N, perturbed_tuple, "warm"));
-    result.stats.push_back(benchmark("D: "+perturb_label, N, perturbed_tuple, "cold"));
+    result.stats.push_back(benchmark("C: "+perturb_label, N, perturb_tuple, "warm"));
+    result.stats.push_back(benchmark("D: "+perturb_label, N, perturb_tuple, "cold"));
 
     return result;
 }
@@ -228,10 +239,9 @@ void MetricsCollector::process_task(bool warmstart)
 
 Statistics MetricsCollector::benchmark(const std::string &label, int N, const std::vector<DataTuple>& tuple, const std::string &mode)
 {
-    //std::vector<IterationMetrics> iters;
-    //std::vector<ConvergenceMetrics> convs;
-    //std::vector<PerformanceMetrics> perfs;
+    size_t convergedN=0;
     std::vector<double> times_ms;
+    std::vector<double> iters;
 
     bool warmstart = (mode=="warm");
 
@@ -252,10 +262,15 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, const st
         // Equilibrate
         process_task(warmstart);
 
-        //iters.push_back(current_iterations);
-        //convs.push_back(current_convergence);
-        //perfs.push_back(current_performance);
-        times_ms.push_back(current_performance.total_time_ms);
+        auto status = current_convergence.return_status;
+        if(status == OK_GEM_AIA || status == OK_GEM_SIA) {
+            ++convergedN;
+            times_ms.push_back(current_performance.total_time_ms);
+            iters.push_back(current_iterations.global_iterations);
+        }
+        // else {
+        //     std::cout << "not convergered " << status << std::endl;
+        // }
     }
     auto t_total = std::chrono::high_resolution_clock::now();
 
@@ -264,16 +279,24 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, const st
     ret_data.label = label;
     ret_data.label += warmstart ? ", warm start" : ", cold start";
     ret_data.run_number = N;
+    ret_data.converged = convergedN;
 
-    if (!times_ms.empty()) {
+    if(!times_ms.empty()) {
         size_t n = times_ms.size();
 
         auto minmax = std::minmax_element(times_ms.begin(), times_ms.end());
         ret_data.min_time_ms = *minmax.first;
         ret_data.max_time_ms = *minmax.second;
 
+        minmax = std::minmax_element(iters.begin(), iters.end());
+        ret_data.iters_min = *minmax.first;
+        ret_data.iters_max = *minmax.second;
+
         double sum = std::accumulate(times_ms.begin(), times_ms.end(), 0.0);
         ret_data.mean_time_ms = sum/n;
+
+        sum = std::accumulate(iters.begin(), iters.end(), 0.0);
+        ret_data.iters_mean = sum/n;
 
         ret_data.median_time_ms = get_median(times_ms);
 

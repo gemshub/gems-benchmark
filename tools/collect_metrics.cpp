@@ -20,12 +20,13 @@ int main(int argc, char* argv[])
 
         auto t0 = std::chrono::high_resolution_clock::now();
 
+        size_t N = 10;
+        MetricsCollector task;
         auto dat_lst_files = difftest::files_into_directory(in_folder, ".*-dat.lst", true);
 
         for(const auto& file : dat_lst_files) {
             GEMS3KGenerator input_data(file);
-            MetricsCollector task(file, 10);
-            BenchmarkResult data = task.getResult();
+            BenchmarkResult data = task.getResult(file, 10);
             nlohmann::json js{data};
             std::ofstream ostr(input_data.get_dir()+"metrics.json");
             ostr << std::setw(4) << js << std::endl;
