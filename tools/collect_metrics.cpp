@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 
         for(const auto& file : dat_lst_files) {
             GEMS3KGenerator input_data(file);
-            MetricsCollector task(file);
+            MetricsCollector task(file, 10);
             BenchmarkResult data = task.getResult();
             nlohmann::json js{data};
             std::ofstream ostr(input_data.get_dir()+"metrics.json");

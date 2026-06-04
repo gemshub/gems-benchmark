@@ -3,12 +3,14 @@
 
 #include <chrono>
 #include <vector>
+#include <functional>
+#include <tuple>
 #include <string>
 #include <nlohmann/json.hpp>
 #include "GEMS3K/node.h"
 
-#include <functional>
-using  fGetInputs = std::function<std::vector<double>(int, double&, double&, const std::vector<double>&)>;
+using DataTuple = std::tuple<double, double, std::vector<double>>;
+using fGetInputs = std::function<DataTuple(int, double, double, const std::vector<double>&)>;
 
 
 struct IterationMetrics {
@@ -74,14 +76,23 @@ void from_json(const nlohmann::json &j, BenchmarkResult &p);
 
 class MetricsCollector {
 public:
-    MetricsCollector(std::string path):
-        path_to_lst(path)
-    {}
+    MetricsCollector(std::string path, size_t n=100);
 
     // Results
     BenchmarkResult getResult();
 
+    void set_generator(const std::string& label, fGetInputs func)
+    {
+        perturb_label = label;
+        generate_perturb_set = func;
+    }
+
 private:
+    std::string path_to_lst;
+    size_t N=100;
+    std::string perturb_label;
+    fGetInputs generate_perturb_set;
+
     std::chrono::high_resolution_clock::time_point start_time;
     std::chrono::high_resolution_clock::time_point stop_time;
 
@@ -89,7 +100,6 @@ private:
     ConvergenceMetrics current_convergence;
     PerformanceMetrics current_performance;
 
-    std::string path_to_lst;
     std::shared_ptr<TNode> node;
     double T0;
     double P0;
@@ -101,7 +111,7 @@ private:
     void recordPerformance();
     bool init_task(const std::string& path_to_lst);
     void process_task(bool warmstart);
-    Statistics benchmark(const std::string& label, int N, fGetInputs perturbf, const std::string& mode="warm");
+    Statistics benchmark(const std::string& label, int N, const std::vector<DataTuple>& tuple, const std::string& mode="warm");
 
     void reset();
     // Timing

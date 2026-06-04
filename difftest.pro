@@ -44,8 +44,8 @@ SOURCES += \
         #main.cpp \
         #tools/recalc_all.cpp \
         #tools/thread_test.cpp
-        tools/compare_dirs.cpp
-        #tools/collect_metrics.cpp
+        #tools/compare_dirs.cpp
+        tools/collect_metrics.cpp
 
 DISTFILES += \
     doc/template_diff.json \

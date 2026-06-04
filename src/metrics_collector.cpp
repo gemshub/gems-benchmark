@@ -4,13 +4,13 @@
 #include <algorithm>
 #include "difftest/metrics_collector.h"
 
-static std::vector<double> nothing_change(int, double&, double&, const std::vector<double>& b)
+static DataTuple nothing_change(int, double T, double P, const std::vector<double>& b)
 {
-    return b;
+    return {T, P, b};
 }
 
 std::mt19937 rng(42);
-static std::vector<double> perturb_b_randomly(int, double&, double&, const std::vector<double>& b)
+static DataTuple perturb_b_randomly(int, double T, double P, const std::vector<double>& b)
 {
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     std::vector<double> perturbed_b{b};
@@ -21,7 +21,7 @@ static std::vector<double> perturb_b_randomly(int, double&, double&, const std::
         val *= perturb;
     }
 
-    return perturbed_b;
+    return {T, P, perturbed_b};
 }
 
 static double get_median(std::vector<double> v)
@@ -32,7 +32,7 @@ static double get_median(std::vector<double> v)
     size_t n = v.size() / 2;
 
     std::nth_element(v.begin(), v.begin() + n, v.end());
-    if (v.size() % 2 != 0) {
+    if(v.size() % 2 != 0) {
         return v[n];
     }
     else {
@@ -143,6 +143,13 @@ void MetricsCollector::recordConvergence(const MULTI &pm)
     current_convergence.dikin_criterion = pm.PCI;
 }
 
+MetricsCollector::MetricsCollector(std::string path, size_t n):
+    path_to_lst(path), N(n)
+{
+    perturb_label = "composition sweep ±5%";
+    generate_perturb_set = perturb_b_randomly;
+}
+
 BenchmarkResult MetricsCollector::getResult()
 {
     BenchmarkResult result;
@@ -161,10 +168,17 @@ BenchmarkResult MetricsCollector::getResult()
 
     // get time statistic
     std::cout <<"get time statistic" << std::endl;
-    result.stats.push_back(benchmark("A: same input, warm start", 100, nothing_change, "warm"));
-    result.stats.push_back(benchmark("D: same input, cold start", 100, nothing_change, "cold"));
-    result.stats.push_back(benchmark("C: composition sweep ±5%, warm", 100, perturb_b_randomly, "warm"));
-    result.stats.push_back(benchmark("E: composition sweep ±5%, cold", 100, perturb_b_randomly, "cold"));
+
+    //Generate an iterable of (T, P, b) tuples (composition, T or P sweeps)
+    std::vector<DataTuple> perturbed_tuple;
+    for(int i = 0; i<N; ++i) {
+        perturbed_tuple.push_back(generate_perturb_set(i, T0, P0, b0));
+    }
+
+    result.stats.push_back(benchmark("A: same input", N, {{T0, P0, b0}}, "warm"));
+    result.stats.push_back(benchmark("B: same input", N, {{T0, P0, b0}}, "cold"));
+    result.stats.push_back(benchmark("C: "+perturb_label, N, perturbed_tuple, "warm"));
+    result.stats.push_back(benchmark("D: "+perturb_label, N, perturbed_tuple, "cold"));
 
     return result;
 }
@@ -212,7 +226,7 @@ void MetricsCollector::process_task(bool warmstart)
     current_performance.total_time_ms = run_ms.count();
 }
 
-Statistics MetricsCollector::benchmark(const std::string &label, int N, fGetInputs perturbf, const std::string &mode)
+Statistics MetricsCollector::benchmark(const std::string &label, int N, const std::vector<DataTuple>& tuple, const std::string &mode)
 {
     //std::vector<IterationMetrics> iters;
     //std::vector<ConvergenceMetrics> convs;
@@ -220,24 +234,19 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, fGetInpu
     std::vector<double> times_ms;
 
     bool warmstart = (mode=="warm");
-    std::vector<double> perturbed_b = b0;
-    double perturbed_T;
-    double perturbed_P;
 
     auto t0 = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < N; ++i) {
         // The composition, T or P sweeps
-        perturbed_T = T0;
-        perturbed_P = P0;
-        perturbed_b = perturbf(i, perturbed_T, perturbed_P, b0);
+        const auto [pert_T, pert_P, pert_b] = tuple[i%tuple.size()];
 
         // Set temperature and pressure
-        node->Set_TK(perturbed_T);
-        node->Set_P(perturbed_P);
+        node->Set_TK(pert_T);
+        node->Set_P(pert_P);
 
         // Set the mole amounts of the elements
-        for(int ii=0; ii<perturbed_b.size(); ++ii) {
-            node->Set_bIC(ii, perturbed_b[ii]);
+        for(int ii=0; ii<pert_b.size(); ++ii) {
+            node->Set_bIC(ii, pert_b[ii]);
         }
 
         // Equilibrate
@@ -253,6 +262,7 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, fGetInpu
     // get statistics
     Statistics ret_data;
     ret_data.label = label;
+    ret_data.label += warmstart ? ", warm start" : ", cold start";
     ret_data.run_number = N;
 
     if (!times_ms.empty()) {
