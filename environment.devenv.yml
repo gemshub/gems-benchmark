@@ -2,13 +2,16 @@ name: gems-benchmark
 
 channels:
   - conda-forge
+  - defaults
 
 dependencies:
-  - compilers
   - cmake>=3.16
-  - ninja
   - git
-  - ccache
+  - gcc_linux-64  # [linux] 
+  - gxx_linux-64  # [linux] 
+  - sysroot_linux-64 # [linux] 
+  - make  # [unix]
+  - ninja
   - python>=3.10
   - pip
   - setuptools
@@ -16,6 +19,5 @@ dependencies:
   - pytest
   - pybind11
   - nlohmann_json
-  - eigen=3.4.0
   - thermofun>=0.5.4
 
