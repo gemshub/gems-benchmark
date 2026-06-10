@@ -44,6 +44,17 @@ void copy_file(const std::string& source, const std::string& target)
 }
 
 
+void remove_file(const std::string &file)
+{
+    fs::path file_path = file;
+    try {
+        fs::remove(file_path);
+    }
+    catch (const fs::filesystem_error& e) {
+        //std::cerr << "OS Error occurred: " << e.what() << "\n";
+    }
+}
+
 // Get all  regular file names from the directory.
 std::vector<std::string> files_into_directory_old(const std::string& directory_path, const std::string& sample)
 {

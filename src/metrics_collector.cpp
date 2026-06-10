@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <random>
 #include <algorithm>
@@ -183,8 +184,10 @@ BenchmarkResult MetricsCollector::getResult(std::string path)
     result.convergence = current_convergence;
     result.performance = current_performance;
 
+
     // get time statistic
     std::cout <<"get time statistic" << std::endl;
+    gemsSettings().gems3k_update_log_level(4); // log only errors
 
     if(statistic_same_input) {
         if(statistic_warm){
@@ -339,7 +342,16 @@ int MetricsCollector::execute_command()
 
             for(const auto& file : dat_lst_files) {
                 GEMS3KGenerator input_data(file);
+
+                // change logger file and remove old
+                auto ipm_log = input_data.get_dir()+"ipm-run.log";
+                difftest::remove_file(ipm_log);
+                gemsSettings().gems3k_update_loggers(false, ipm_log, log_level);
+
+                // collect data
                 BenchmarkResult data = getResult(file);
+
+                // save metrics
                 nlohmann::json js{data};
                 std::ofstream ostr(input_data.get_dir()+"metrics.json");
                 ostr << std::setw(4) << js << std::endl;
@@ -357,6 +369,8 @@ void MetricsCollector::show_usage(const std::string &name)
               << "\nThe utility to collect  metrics and statistics of the GEMS3K projects\n"
               << "Options:\n"
               << "\t-h,\t--help\t\t\tshow this help message\n\n"
+
+              << "\t-l,\t--logging-level NUM\tconfigures logging behavior for the gems3k (default 3)\n\n"
 
               << "\t-pw,\t--process_warm \t\tcollect metrics uses the previous equilibrium as the initial guess (default)\n"
               << "\t-pc,\t--process_cold \t\tcollect metrics uses a simplex LP initial guess \n\n"
@@ -422,6 +436,14 @@ int MetricsCollector::extract_args(int argc, char* argv[])
                 N = std::stod(argv[++i]);
             } else {
                 std::cerr << "--number-points option requires one argument." << std::endl;
+                return 1;
+            }
+        }
+        else if((arg == "-l") || (arg == "--logging-level")) {
+            if(i + 1 < argc) {
+                log_level = std::stod(argv[++i]);
+            } else {
+                std::cerr << "--logging-level option requires one argument." << std::endl;
                 return 1;
             }
         }

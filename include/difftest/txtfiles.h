@@ -17,5 +17,6 @@ bool path_exist(const std::string& path);
 /// Checks if the given file status or path corresponds to an existing file or try change extension.
 bool path_exist_try_other_ext(std::string& path, const std::string& other_ext);
 
+void remove_file(const std::string &file);
 
 } // namespace difftest

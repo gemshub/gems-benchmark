@@ -130,6 +130,9 @@ private:
     /// Configures the engine to use a warm start
     bool warmstart = false;
 
+    /// gems3k logging level
+    size_t log_level = 3;
+
     // Task data (init_task)
     std::string path_to_lst;
     std::shared_ptr<TNode> node;
