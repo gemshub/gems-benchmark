@@ -2,7 +2,9 @@
 #include <chrono>
 #include <random>
 #include <algorithm>
+#include "GEMS3K/jsonconfig.h"
 #include "difftest/metrics_collector.h"
+#include "difftest/txtfiles.h"
 
 static DataTuple nothing_change(int, double T, double P, const std::vector<double>& b)
 {
@@ -152,17 +154,21 @@ void MetricsCollector::recordConvergence(const MULTI &pm)
     current_convergence.dikin_criterion = pm.PCI;
 }
 
-MetricsCollector::MetricsCollector():
-    path_to_lst()
+MetricsCollector::MetricsCollector(const std::string def_folder, int argc, char* argv[]):
+    input_folder(def_folder), path_to_lst()
 {
     perturb_label = "composition sweep ±5%";
     generate_perturb_set = perturb_b_randomly;
+
+    if(extract_args( argc, argv)) {
+        command = Help;
+        std::cout << "Illegal arguments" << std::endl;
+    }
 }
 
-BenchmarkResult MetricsCollector::getResult(std::string path, size_t n)
+BenchmarkResult MetricsCollector::getResult(std::string path)
 {
     path_to_lst = path;
-    N = n;
     BenchmarkResult result;
     result.system_id = path_to_lst;
 
@@ -172,7 +178,7 @@ BenchmarkResult MetricsCollector::getResult(std::string path, size_t n)
     }
 
     // Calc main task
-    process_task(true);
+    process_task(warmstart);
     result.iterations = current_iterations;
     result.convergence = current_convergence;
     result.performance = current_performance;
@@ -180,16 +186,29 @@ BenchmarkResult MetricsCollector::getResult(std::string path, size_t n)
     // get time statistic
     std::cout <<"get time statistic" << std::endl;
 
-    //Generate an iterable of (T, P, b) tuples (composition, T or P sweeps)
-    std::vector<DataTuple> perturb_tuple;
-    for(int i = 0; i<N; ++i) {
-        perturb_tuple.push_back(generate_perturb_set(i, T0, P0, b0));
+    if(statistic_same_input) {
+        if(statistic_warm){
+            result.stats.push_back(benchmark("A: same input", N, {{T0, P0, b0}}, "warm"));
+        }
+        if(statistic_cold){
+            result.stats.push_back(benchmark("B: same input", N, {{T0, P0, b0}}, "cold"));
+        }
     }
 
-    result.stats.push_back(benchmark("A: same input", N, {{T0, P0, b0}}, "warm"));
-    result.stats.push_back(benchmark("B: same input", N, {{T0, P0, b0}}, "cold"));
-    result.stats.push_back(benchmark("C: "+perturb_label, N, perturb_tuple, "warm"));
-    result.stats.push_back(benchmark("D: "+perturb_label, N, perturb_tuple, "cold"));
+    if(statistic_perturb_set) {
+        //Generate an iterable of (T, P, b) tuples (composition, T or P sweeps)
+        std::vector<DataTuple> perturb_tuple;
+        for(int i = 0; i<N; ++i) {
+            perturb_tuple.push_back(generate_perturb_set(i, T0, P0, b0));
+        }
+
+        if(statistic_warm){
+            result.stats.push_back(benchmark("C: "+perturb_label, N, perturb_tuple, "warm"));
+        }
+        if(statistic_cold){
+            result.stats.push_back(benchmark("D: "+perturb_label, N, perturb_tuple, "cold"));
+        }
+    }
 
     return result;
 }
@@ -215,7 +234,6 @@ bool MetricsCollector::init_task(const std::string &path_to_lst)
     }
     return true;
 }
-
 
 void MetricsCollector::process_task(bool warmstart)
 {
@@ -243,7 +261,7 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, const st
     std::vector<double> times_ms;
     std::vector<double> iters;
 
-    bool warmstart = (mode=="warm");
+    bool warmstart1 = (mode=="warm");
 
     auto t0 = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < N; ++i) {
@@ -253,14 +271,13 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, const st
         // Set temperature and pressure
         node->Set_TK(pert_T);
         node->Set_P(pert_P);
-
         // Set the mole amounts of the elements
         for(int ii=0; ii<pert_b.size(); ++ii) {
             node->Set_bIC(ii, pert_b[ii]);
         }
 
         // Equilibrate
-        process_task(warmstart);
+        process_task(warmstart1);
 
         auto status = current_convergence.return_status;
         if(status == OK_GEM_AIA || status == OK_GEM_SIA) {
@@ -268,16 +285,16 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, const st
             times_ms.push_back(current_performance.total_time_ms);
             iters.push_back(current_iterations.global_iterations);
         }
-        // else {
-        //     std::cout << "not convergered " << status << std::endl;
-        // }
+        else {
+            std::cout << "not convergered " << status << std::endl;
+        }
     }
     auto t_total = std::chrono::high_resolution_clock::now();
 
     // get statistics
     Statistics ret_data;
     ret_data.label = label;
-    ret_data.label += warmstart ? ", warm start" : ", cold start";
+    ret_data.label += warmstart1 ? ", warm start" : ", cold start";
     ret_data.run_number = N;
     ret_data.converged = convergedN;
 
@@ -308,4 +325,109 @@ Statistics MetricsCollector::benchmark(const std::string &label, int N, const st
     }
 
     return ret_data;
+}
+
+int MetricsCollector::execute_command()
+{
+    switch(command)  {
+    case MetricsCollector::Help:
+        show_usage("metrics_collector");
+        break;
+    case MetricsCollector::CollectDirectories:
+        if(!input_folder.empty()) {
+            auto dat_lst_files = difftest::files_into_directory(input_folder, ".*-dat.lst", true);
+
+            for(const auto& file : dat_lst_files) {
+                GEMS3KGenerator input_data(file);
+                BenchmarkResult data = getResult(file);
+                nlohmann::json js{data};
+                std::ofstream ostr(input_data.get_dir()+"metrics.json");
+                ostr << std::setw(4) << js << std::endl;
+            }
+        }
+        break;
+    }
+    return 0;
+}
+
+
+void MetricsCollector::show_usage(const std::string &name)
+{
+    std::cout << "Usage: " << name << " [ option(s) ] FOLDER_PATH"
+              << "\nThe utility to collect  metrics and statistics of the GEMS3K projects\n"
+              << "Options:\n"
+              << "\t-h,\t--help\t\t\tshow this help message\n\n"
+
+              << "\t-pw,\t--process_warm \t\tcollect metrics uses the previous equilibrium as the initial guess (default)\n"
+              << "\t-pc,\t--process_cold \t\tcollect metrics uses a simplex LP initial guess \n\n"
+
+              << "\t-n,\t--number-points NUM\tnumber statistic points (default 100)\n"
+
+              << "\t-s,\t--same-input \t\tget statistic for same input (default)\n"
+              << "\t-ns,\t--no-same-input\t\thide statistic for same input\n"
+              << "\t-g,\t--generate-tuples \tget statistic for generated tuples (default)\n"
+              << "\t-ng,\t--no-generate-tuples \thide statistic for generated tuples\n"
+
+              << "\t-w,\t--warn \t\t\tget statistic for warm mode (default)\n"
+              << "\t-nw,\t--no-warn \t\thide statistic for warm mode\n"
+              << "\t-c,\t--cold \t\t\tget statistic for cold mode (default)\n"
+              << "\t-nc,\t--no-cold \t\thide statistic for cold mode\n"
+
+              << std::endl;
+}
+
+
+int MetricsCollector::extract_args(int argc, char* argv[])
+{
+    int i=0;
+    for(i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if((arg == "-h") || (arg == "--help")) {
+            command = Help;
+            return 0;
+        }
+        else if((arg == "-pw") || (arg == "--process_warm")) {
+            warmstart = true;
+        }
+        else if((arg == "-pc") || (arg == "--process_cold")) {
+            warmstart = false;
+        }
+
+        else if((arg == "-s") || (arg == "--same-input")) {
+            statistic_same_input = true;
+        }
+        else if((arg == "-ns") || (arg == "--no-same-input")) {
+            statistic_same_input = false;
+        }
+        else if((arg == "-g") || (arg == "--generate-tuples")) {
+            statistic_perturb_set = true;
+        }
+        else if((arg == "-ng") || (arg == "--no-generate-tuples")) {
+            statistic_warm = false;
+        }
+        else if((arg == "-w") || (arg == "--warn")) {
+            statistic_perturb_set = true;
+        }
+        else if((arg == "-nw") || (arg == "--no-warn")) {
+            statistic_warm = false;
+        }
+        else if((arg == "-c") || (arg == "--cold")) {
+            statistic_cold = true;
+        }
+        else if((arg == "-nc") || (arg == "--no-cold")) {
+            statistic_cold = false;
+        }
+        else if((arg == "-n") || (arg == "--number-points")) {
+            if(i + 1 < argc) {
+                N = std::stod(argv[++i]);
+            } else {
+                std::cerr << "--number-points option requires one argument." << std::endl;
+                return 1;
+            }
+        }
+        else {
+            input_folder = arg;
+        }
+    }
+    return 0;
 }

@@ -77,46 +77,87 @@ void from_json(const nlohmann::json &j, Statistics &p);
 void to_json(nlohmann::json &j, const BenchmarkResult &p);
 void from_json(const nlohmann::json &j, BenchmarkResult &p);
 
-class MetricsCollector {
+class MetricsCollector final {
 public:
-    MetricsCollector();
 
-    BenchmarkResult getResult(std::string path, size_t n=100);
+    /// These are common commands used in various situations
+    enum MCommands {
+        Help,
+        CollectDirectories
+    };
 
+    /// Constructor that reads options
+    MetricsCollector(const std::string def_folder, int argc, char* argv[]);
+
+    /// Collect metrics and statistics
+    BenchmarkResult getResult(std::string path);
+
+    /// Update the generator  of (T, P, b) tuples
     void set_generator(const std::string& label, fGetInputs func)
     {
         perturb_label = label;
         generate_perturb_set = func;
     }
 
+    /// Execute command
+    int execute_command();
+
 private:
-    std::string path_to_lst;
-    size_t N=100;
+
+    // main settings
+    MCommands command = CollectDirectories;
+
+    /// Top folder to collector
+    std::string input_folder;
+
+    /// Generator iterable of (T, P, b) tuples, label
     std::string perturb_label;
+    /// Generator iterable of (T, P, b) tuples, function
     fGetInputs generate_perturb_set;
 
-    std::chrono::high_resolution_clock::time_point start_time;
-    std::chrono::high_resolution_clock::time_point stop_time;
+    /// Number statistic points
+    size_t N = 100;
 
-    IterationMetrics current_iterations;
-    ConvergenceMetrics current_convergence;
-    PerformanceMetrics current_performance;
+    /// Get statistics for warm mode
+    bool statistic_warm = true;
+    /// Get statistics for cold mode
+    bool statistic_cold = true;
+    /// Get statistics for generated tuples
+    bool statistic_perturb_set = true;
+    /// Get statistics for the same input data
+    bool statistic_same_input = true;
 
+    /// Configures the engine to use a warm start
+    bool warmstart = false;
+
+    // Task data (init_task)
+    std::string path_to_lst;
     std::shared_ptr<TNode> node;
     double T0;
     double P0;
     std::vector<double> b0;
 
+    // Collect GEMS3K metrics after re-calculating equilibrium
+    IterationMetrics current_iterations;
+    ConvergenceMetrics current_convergence;
+    PerformanceMetrics current_performance;
+
+    //std::chrono::high_resolution_clock::time_point start_time;
+    //std::chrono::high_resolution_clock::time_point stop_time;
+
     // Data collection
     void recordIterations(const MULTI& pm);
     void recordConvergence(const MULTI& pm);
     void recordPerformance();
+    // Task performers
     bool init_task(const std::string& path_to_lst);
     void process_task(bool warmstart);
     Statistics benchmark(const std::string& label, int N, const std::vector<DataTuple>& tuple, const std::string& mode="warm");
 
-    void reset();
+    void show_usage(const std::string& name);
+    int extract_args(int argc, char *argv[]);
+
     // Timing
-    void startTimer();
-    void stopTimer();
+    //void startTimer();
+    //void stopTimer();
 };
