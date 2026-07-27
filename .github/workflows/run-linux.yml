@@ -1,0 +1,91 @@
+name: run-linux
+on:
+  push:
+    branches:
+      - develop1
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ ubuntu-latest ]
+        conda_platform: [ linux-64 ]
+        artifact_name: [ collect-linux ]
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get version from CMakeLists.txt
+        id: get_version
+        uses: DarwinInnovation/cmake-project-version-action@v1.0
+
+      - name: Set result name
+        id: strings
+        shell: bash
+        run: >
+          echo "run-name=test-suite-${{ steps.get_version.outputs.version }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set deploy dir
+        id: strings2
+        shell: bash
+        run: |
+          echo "deploy-output-dir=${{ github.workspace }}/${{ steps.strings.outputs.run-name }}" >> "$GITHUB_OUTPUT"
+          echo "deploy-output-name=linux-${{ steps.strings.outputs.run-name }}.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          auto-activate: false
+          activate-environment: base
+          channels: conda-forge
+
+      - name: Configuring Conda Environment
+        run: |
+          conda config --set always_yes yes --set changeps1 no
+          conda config --add channels conda-forge
+          conda install conda-devenv
+          conda run -n base python -m conda_devenv
+
+      - name: Building, Testing & Installing GEMSGUI
+        shell: bash -l {0}
+        run: |
+          conda activate gems-benchmark
+          ./conda-install-dependencies.sh
+          mkdir .build && cd .build
+          cmake -GNinja .. -DCMAKE_BUILD_TYPE=Release
+          ninja
+          ninja install
+
+
+      - name: Check run
+        shell: bash -l {0}
+        run: |
+          conda activate gems-benchmark
+          cd Resources
+          recalc_all
+          compare_dirs -d -r -t ".*-dbr-[\d-]*.*" -rd  dbr_diff.json -a  0.1e-6 > compare.log
+          collect_metrics
+          ls
+          
+      - name: Create zip archive for GitHub release
+        run: |
+          cd ${{ github.workspace }}
+          zip -y -r ${{ steps.strings2.outputs.deploy-output-name }} Resources
+
+      - name: Upload zip archive 
+        uses: actions/upload-artifact@v4 
+        with: 
+          name: linux-${{ steps.strings.outputs.run-name }}
+          path: ${{ github.workspace }}/${{ steps.strings2.outputs.deploy-output-name }}
+
+
+
+
+
+
