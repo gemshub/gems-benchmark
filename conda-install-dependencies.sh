@@ -16,7 +16,7 @@ test -f ${CONDA_PREFIX}/lib/libGEMS3K.$EXTN || {
         # Building GEMS3k library
         mkdir -p ~/code && \
         cd ~/code && \
-        git clone https://github.com/sdmytrievs/GEMS3K.git  && \
+        git clone https://github.com/gemshub/GEMS3K.git  && \
         cd GEMS3K && \
         mkdir -p build && \
         cd build && \
