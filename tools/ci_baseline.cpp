@@ -2,10 +2,9 @@
 //
 // The exploratory / recording half of the pair; tests/test_ci_baseline.cpp is the
 // asserting half. Both are thin drivers over include/difftest/ci_baseline.h,
-// which holds the case list, the row format and the scoring, so the two can never
-// drift apart - the same arrangement as solvus_sweep.h / test_solvus.cpp.
+// which holds the case list, the row format and the scoring.
 //
-// STAGE 1 IS NATIVE ONLY (AIA + SIA). No Optima. See the header.
+// Stage 1 is native only (AIA + SIA). No Optima.
 //
 //   usage: ci_baseline [--out FILE] [--check FILE] [--project NAME] [--modes LIST]
 //
@@ -15,38 +14,31 @@
 //                      report the CTest case prints. Exit 1 on any finding.
 //     --project NAME   restrict to one project (substring match), for working on
 //                      a single row without re-recording the corpus
-//     --against WHAT   `frozen` (default) or `stored` - WHERE THE REFERENCE COMES
-//                      FROM. The chain is identical either way: load the system,
+//     --against WHAT   `frozen` (default) or `stored` - where the reference comes
+//                      from. The chain is identical either way: load the system,
 //                      solve it, build a row. Only the row it is compared against
 //                      changes. `frozen` reads the external table, which is right
-//                      for PRE-EXPORTED files whose own stored results are not
-//                      current (18 of 62 reproduce). `stored` compares against the
-//                      results inside the system files, which is right for a
-//                      FRESHLY exported system, where they are current by
-//                      construction and no external table can exist yet.
+//                      for pre-exported files whose own stored results are not
+//                      current. `stored` compares against the results inside the
+//                      system files, which is right for a freshly exported
+//                      system, where they are current by construction and no
+//                      external table can exist yet.
 //     --systems DIR    scan DIR for freshly exported systems instead of using the
 //                      curated case list. Implies --against stored unless told
-//                      otherwise; this is the one place a directory scan is right,
-//                      because enumerating unknown systems IS the task.
-//     --modes LIST     comma-separated, from the lane's OWN mode list. Default
+//                      otherwise, since a scanned directory has no frozen rows
+//                      by definition.
+//     --modes LIST     comma-separated, from the lane's own mode list. Default
 //                      "native,SIA", which is currently also all there is - the
 //                      list lives in cibase::knownModes() and contains no Optima
 //                      mode by design. Asking for one is refused by name, not
 //                      silently ignored.
 //
-// RUN IT FROM THE REPOSITORY ROOT. Every path in the case list is repo-relative,
-// matching the convention of every other tool and test here - and running the
-// solvus benchmark from build-solvus/bin instead reports "Tc = nan, failed = 301"
-// and reads exactly like a catastrophic regression when it is a file-open error
-// (CLAUDE.md s4).
+// Run it from the repository root. Every path in the case list is repo-relative.
 //
-// TAKING A NEW BASELINE IS A DECISION, NOT A FIX. If --check goes red, the
+// Taking a new baseline is a decision, not a fix. If --check goes red, the
 // question is what moved and why. Overwriting the record with --out because the
-// numbers changed converts a regression into a silent re-baseline - the exact
-// failure mode tools/recheck.py exists to prevent ("a STALE result means a
-// recorded number moved: read its note and fix the code or the record - never
-// just update the expected value"). Re-record deliberately, in its own commit,
-// saying what moved.
+// numbers changed converts a regression into a silent re-baseline. Re-record
+// deliberately, in its own commit, saying what moved.
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -75,9 +67,9 @@ int main(int argc, char** argv)
                                     " [--against frozen|stored] [--systems DIR]\n"); return 2; }
     }
 
-    // The reference source. Explicit and never inferred from the data - on this
-    // corpus the stored values differ from a fresh solve on 44 of 62 projects, so
-    // a tool that guessed "stored" here would emit 44 findings, none of them real.
+    // The reference source is explicit and never inferred from the data: the
+    // stored values differ from a fresh solve on most of this corpus, so a
+    // tool that guessed "stored" here would emit spurious findings.
     // --systems is the single exception, and only because a scanned directory has
     // no frozen rows by definition.
     cibase::Reference ref = cibase::Reference::Frozen;
@@ -93,8 +85,7 @@ int main(int argc, char** argv)
     // No guard on what --against stored may be pointed at: unlike the frozen
     // reference it never needs an external file, because every system carries its
     // own. Pointed at the curated list it answers "does this fixture still
-    // reproduce what it was exported with", which for most of this corpus is
-    // "no" - see the measurement in Docs/reference/ci-lanes-plan.md s2.
+    // reproduce what it was exported with".
     const cibase::Scoring scoring = cibase::scoringFor(ref);
 
     std::vector<cibase::Mode> modes;
@@ -104,8 +95,8 @@ int main(int argc, char** argv)
         return 2;
     }
 
-    // Route GEMS3K's own loggers to a file rather than the terminal, matching
-    // tools/recalc_all.cpp and tools/collect_metrics.cpp. Level 3 keeps warnings.
+    // Route GEMS3K's own loggers to a file rather than the terminal.
+    // Level 3 keeps warnings.
     gemsSettings().gems3k_update_loggers(false, "test.log", 3);
 
     std::vector<cibase::Row> rows;
@@ -117,8 +108,8 @@ int main(int argc, char** argv)
                      pool.size(), systems.c_str());
 
     // Drop what this checkout does not have, and say so. A missing corpus is not
-    // a finding - see availableCases() - but a gate that silently checks a third
-    // of its record while looking just as green is the thing to avoid.
+    // a finding, but a gate that silently checks only part of its record while
+    // looking just as green is the thing to avoid.
     std::map<std::string, int> absentByCorpus;
     const size_t poolTotal = pool.size();
     pool = cibase::availableCases(pool, absentByCorpus);

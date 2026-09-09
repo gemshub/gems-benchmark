@@ -51,11 +51,10 @@ void remove_file(const std::string &file)
         fs::remove(file_path);
     }
     catch (const fs::filesystem_error& e) {
-        //std::cerr << "OS Error occurred: " << e.what() << "\n";
     }
 }
 
-// Get all  regular file names from the directory.
+// Returns the regular file names in directory_path whose name contains sample.
 std::vector<std::string> files_into_directory_old(const std::string& directory_path, const std::string& sample)
 {
     std::vector<std::string> file_names;
@@ -66,7 +65,6 @@ std::vector<std::string> files_into_directory_old(const std::string& directory_p
             for(auto& p: fs::directory_iterator(ps)) {
                 if(fs::is_regular_file(p.path())) {
                     std::string file = p.path().string();
-                    //cout << "file = " << file << endl;
                     if(sample.empty() || file.find(sample) != std::string::npos) {
                         file_names.push_back(file);
                     }
@@ -105,20 +103,17 @@ std::vector<std::string> files_into_directory(const std::string& directory_path,
 }
 
 
-// Read whole ASCII file into string.
+// Reads a whole ASCII file into a string, stripping a leading UTF-8 BOM if present.
 std::string read_ascii_file(const std::string& file_path)
 {
     std::ifstream t(file_path);
-    /// JARANGO_THROW_IF( !t.good(), "filesystem", 4, "file open error...  " + file_path );
     std::stringstream buffer;
     buffer << t.rdbuf();
 
     auto retstr = buffer.str();
-    // skip over optional BOM http://unicode.org/faq/utf_bom.html
     if(retstr.size() >= 3 && static_cast<uint8_t>(retstr[0]) == 0xef &&
         static_cast<uint8_t>(retstr[1]) == 0xbb &&
         static_cast<uint8_t>(retstr[2]) == 0xbf) {
-        // found UTF-8 BOM. simply skip over it
         retstr = retstr.substr(3);
     }
     return retstr;

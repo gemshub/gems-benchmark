@@ -2,13 +2,12 @@
 // ci_baseline - the CI lane's regression record: "the answer and the effort did not move".
 //
 // THE MODES ARE A LIST, and knownModes() below is the only place it is declared.
-// Today it holds AIA (cold) and SIA (warm) and nothing else, by owner decision
-// (2026-09-08): Optima is BENCHMARK work and stays in the benchmark lane. There
-// is no USE_OPTIMA_SOLVER in this file, none in either driver, and no
-// Optima-gated row in the record; the CI CTest label likewise admits only test
-// binaries that contain no Optima code at all. Both drivers take --modes, which
-// selects a SUBSET of knownModes() and cannot introduce anything outside it.
-// What adding a mode would require is written out at knownModes() itself.
+// It holds AIA (cold) and SIA (warm) and nothing else: Optima is benchmark work
+// and stays in the benchmark lane. There is no USE_OPTIMA_SOLVER in this file,
+// none in either driver, and no Optima-gated row in the record; the CI CTest
+// label likewise admits only test binaries that contain no Optima code at all.
+// Both drivers take --modes, which selects a SUBSET of knownModes() and cannot
+// introduce anything outside it.
 //
 // ============================================================================
 // WHY THIS EXISTS, AND WHY IT IS NOT THE FREEZE
@@ -16,22 +15,14 @@
 //
 // This repo already has a "nothing moved" instrument: the freeze
 // (tools/freeze.sh + tools/freeze_diff.py, Docs/BENCHMARK-FREEZE.md). It is the
-// standard, and nothing here replaces or competes with it. But it cannot be the
-// thing a CI job runs, for four reasons that are properties of the freeze rather
-// than defects in it:
+// standard, and nothing here replaces or competes with it. It cannot be the
+// thing a CI job runs: it shells out to a binary that lives in the sibling repo
+// and uses absolute paths, so a CI checkout cannot reproduce it; it runs six
+// modes over three corpora and takes tens of minutes against a CI budget of
+// seconds; and its "# set"/"# eff"/"# dec" blocks are exploratory apparatus for
+// finding a better setting, not what a pass/fail gate wants.
 //
-//   1. It shells out to $GEMS3K/debug-optima-vs-reaktoro/rop_compare - a binary
-//      that lives in the SIBLING repo and is not part of any build this repo
-//      performs. A CI checkout of gems-benchmark cannot produce it.
-//   2. Its paths are absolute (/home/dmiron/git/hub/...). A CI runner has none.
-//   3. It runs SIX modes over three corpora and takes tens of minutes. The whole
-//      point of the CI lane is a budget in seconds.
-//   4. Its DATA ROWS are only half of it. The "# set"/"# eff"/"# dec" comment
-//      blocks exist to let a human search for a better SETTING, and require the
-//      GEMS3K_NATIVE_TRACE_FILE records tools/trace_selfcheck.sh gates on. That
-//      is exploratory apparatus; a pass/fail gate does not want it.
-//
-// So the freeze stays the standard for ALGORITHM WORK, and this is the small,
+// So the freeze stays the standard for algorithm work, and this is the small,
 // self-contained, in-repo subset that answers the one CI question: did a commit
 // change an answer or an iteration count on a system where those are constants?
 //
@@ -39,37 +30,35 @@
 // WHAT IS SCORED, AND THE ORDER OF SEVERITY
 // ============================================================================
 //
-// Deliberately the same ranking tools/freeze_diff.py applies, so that a CI red
-// and a freeze finding mean the same thing and are read the same way:
+// The same ranking tools/freeze_diff.py applies, so a CI red and a freeze
+// finding mean the same thing:
 //
 //   STATUS   a converged row stopped converging (or vice versa). Outranks
 //            everything: a lost answer is never paid for by an iteration saving.
 //   ANSWER   G, Vs or Ms moved past tolerance, the present-phase NAME SET
 //            changed, or a present phase's amount moved past tolerance.
 //   COST     ITF, ITG or K2 moved. Only ever scored where a JITTER MEASUREMENT
-//            admits it - see the next section, which is the whole reason the case
-//            list is curated rather than a directory scan.
+//            admits it - see the next section, which is why the case list is
+//            curated rather than a directory scan.
 //   pH       reported with the freeze's own looser tolerance (1e-3 relative): it
 //            is a derived logarithm of one activity, and is not an observable at
-//            all where there is no free solution (CLAUDE.md s4, T-cement).
-//   Eh       PRINTED AND NEVER SCORED. Same rule as the freeze. Eh is
-//            underdetermined on unbuffered systems - a 1e-15 bIC nudge moves
-//            10TH's by ~1 V - so scoring it manufactures failures.
+//            all where there is no free solution.
+//   Eh       PRINTED AND NEVER SCORED. Eh is underdetermined on unbuffered
+//            systems - a 1e-15 bIC nudge moves 10TH's by ~1 V - so scoring it
+//            manufactures failures.
 //   MBE      the mass-balance residual max|C[i]|, PRINTED AND NEVER SCORED. It is
-//            carried because it is the one convergence-QUALITY number that is
-//            deterministic for fixed input and costs nothing, so a human reading
-//            a red row has it to hand. It is not scored because no measurement in
-//            this repo establishes a band for it.
+//            carried because it is a convergence-quality number that is
+//            deterministic for fixed input and costs nothing to report, but no
+//            measurement here establishes a band for it.
 //
 // Tolerances are LITERALLY freeze_diff.py's defaults (G/Vs/Ms 1e-9 relative, pH
-// 1e-3 relative) and must stay that way. CLAUDE.md s6: "Two tools scoring the
-// same files must share one tolerance" - at 1e-6 against 1e-9 two tools reported
-// OPPOSITE verdicts on the same pair.
+// 1e-3 relative) and must stay that way - two tools scoring the same files at
+// different tolerances (1e-6 vs 1e-9) have reported opposite verdicts on the
+// same pair.
 //
-// NOT scored, and not recorded: WALL TIME. Two identical runs differ by a median
-// 13 % and a p90 of 68 % (CLAUDE.md s4). A CI job runs on a shared, noisy,
-// unknown machine, so a timing assertion there is a coin flip wearing a lab coat.
-// Cost is expressed in ITERATIONS, which are deterministic for fixed input.
+// NOT scored, and not recorded: wall time. Two identical runs differ by a median
+// 13% and a p90 of 68%, so a timing assertion on a shared CI runner is a coin
+// flip. Cost is expressed in iterations, which are deterministic for fixed input.
 //
 // ============================================================================
 // WHY THE CASE LIST IS CURATED, AND WHAT ADMITS A PROJECT
@@ -78,83 +67,42 @@
 // A directory scan would be wrong twice over.
 //
 // FIRST, ITERATION COUNTS ARE NOT UNIVERSALLY REPRODUCIBLE. On 20 of 42 corpus
-// projects, nudging bIC by k*1e-15 relative - four or five ulp - moves native's
-// iteration count by 1.5x to 158x, and on four it flips the CONVERGED/FAILED
-// verdict (CLAUDE.md s4; tools/iteration_jitter is the instrument). The runs
-// themselves are deterministic, so a fixed-input A/B is still valid - but any
-// code change UPSTREAM of the IPM loop acts on those projects exactly as the
-// nudge does. Pinning an iteration count there produces a test that goes red on
-// an unrelated commit, which is the fastest way to teach a team to ignore a CI
-// job. So a row's COST is scored only where a jitter measurement says `stable`;
-// the verdict and the measured ITG/ITF spread are recorded per row below, so the
-// admission is auditable and can be re-taken when the numbers move.
+// projects, nudging bIC by a few ulp moves native's iteration count by 1.5x to
+// 158x, and on four it flips the converged/failed verdict (tools/
+// iteration_jitter is the instrument). The runs themselves are deterministic, so
+// a fixed-input A/B is still valid - but any code change upstream of the IPM
+// loop acts on those projects exactly as the nudge does, so pinning an iteration
+// count there produces a test that goes red on an unrelated commit. A row's COST
+// is therefore scored only where a jitter measurement says `stable`; the verdict
+// and the measured ITG/ITF spread are recorded per row below, so the admission is
+// auditable and can be re-taken when the numbers move.
 //
-// SECOND, "SOMEONE ADDED A PROJECT" MUST NOT BE A CI FAILURE. CLAUDE.md s4 is
-// explicit that adding a project is itself a measurement event and belongs in a
-// deliberate commit that re-baselines what it touches; T-cement landing in a
-// corpus mid-gate moved two recheck.py claims to STALE for pure bookkeeping
-// reasons, and STALE is supposed to mean a recorded number moved. A directory
-// scan would spend that signal on every new export. Adding a row here is a
-// decision, taken in a commit, exactly like promoting a project.
+// SECOND, "SOMEONE ADDED A PROJECT" MUST NOT BE A CI FAILURE. Adding a project is
+// itself a measurement event, so a directory scan would spend a STALE-style
+// signal on every new export. Adding a row here is instead a decision, taken in
+// a commit, exactly like promoting a project into a corpus.
 //
-// Cost is the third admission test. Measured 2026-09-08 over both corpora, every
-// native cold solve is <= 0.56 s and most are under 0.05 s, so native is cheap
-// enough that the whole main corpus fits the budget - which is why the list below
-// is broad rather than a token sample.
+// Cost is the third admission test: every native cold solve across the admitted
+// corpora is well under a second, so native is cheap enough for a broad list
+// rather than a token sample.
 //
 // ============================================================================
-// WHAT WAS TAKEN FROM MetricsCollector, AND WHAT WAS DELIBERATELY LEFT
+// WHAT IS RECORDED HERE THAT METRICSCOLLECTOR DOES NOT CAPTURE
 // ============================================================================
 //
-// include/difftest/metrics_collector.h is the BENCHMARK lane's instrument and
-// stays exactly as it is. Reviewing it for what a TEST can use:
+// include/difftest/metrics_collector.h is the benchmark lane's own instrument
+// and is untouched by this file. Two differences worth knowing:
 //
-//   TAKEN  IterationMetrics::{ipm,mbr,global}_iterations and
-//          phase_selection_loops (pm.IT / pm.ITF / pm.ITG / pm.K2). Deterministic
-//          for fixed input, and the direct expression of "effort".
-//   TAKEN  ConvergenceMetrics::return_status - the raw GEM_run() code. This is
-//          the real pass/fail signal, per Docs/PROJECT_STATE.md.
-//   LEFT   ConvergenceMetrics::converged / return_code. Documented dead:
-//          pm.MK is set to 0 or 2 throughout GEMS3K and never to 1, so
-//          `converged` is ALWAYS false. Scoring it would pass vacuously forever.
-//   LEFT   IterationMetrics::total_iterations - assigned 0 unconditionally in
-//          MetricsCollector::recordIterations().
-//   LEFT   ConvergenceMetrics::mass_balance_error AS DEFINED THERE. It is
-//          max(pm.C[i]) - an unsigned max over a SIGNED residual, so a purely
-//          negative residual vector reports 0. This file records max|C[i]|
-//          instead, and says so here rather than editing metrics_collector.cpp:
-//          Docs/PROJECT_STATE.md lists that as a known issue to be fixed only on
-//          request, and silently changing it would move every recorded benchmark
-//          number. The two quantities are therefore NOT comparable across the two
-//          files by construction - which is a second reason this one is never
-//          scored, on top of there being no measured band for it.
-//   LEFT   PerformanceMetrics entirely - wall time, see above. (Note also that
-//          solve_time_ms / condnum_time_ms / solve_call_count are declared in the
-//          struct but written by no to_json/from_json in
-//          src/metrics_collector.cpp, so they never reach metrics.json at all.)
-//   LEFT   MetricsCollector::benchmark()'s 100-run randomized loops. They are the
-//          benchmark lane's whole purpose, and what disqualifies them from a gate
-//          is that they MEASURE TIMING - which on this machine is noise up to
-//          68 % between identical runs, and on a shared CI runner is worse. They
-//          also hang indefinitely on six Resources/gems3k-psina projects
-//          (Docs/PROJECT_STATE.md). Neither is a defect for their purpose.
-//
-//          RE-CHECKED 2026-09-09 after pulling origin/develop, and TWO EARLIER
-//          ENTRIES HERE WERE WITHDRAWN because the upstream work fixed them:
-//          `9486560` made the loop check each run's status and drop failed runs
-//          from the statistics (it now collects an iteration statistic too), and
-//          `f6ff85a` precomputes the +-5 % perturbation set once so cold and warm
-//          are driven with the SAME inputs. This file previously said the loop did
-//          neither. It is recorded rather than silently deleted because a stale
-//          claim about someone else's code is the kind that goes on being repeated.
-//
-// ADDED here, and in MetricsCollector nowhere: the PRESENT-PHASE ASSEMBLAGE. G,
-// Vs and Ms cannot see a lost phase - on T14_ball120 native dropped five trace
-// solids, three of them supersaturated, and the two assemblages differed by 1e-6
-// RT in G and 1.3e-10 in Vs, so every scalar column reported them identical
-// (tests/TEST-CATALOGUE.md, trace_phases). The freeze gained an NPH column for
-// exactly this; NPH catches a COUNT change but not the count staying put while
-// the SET drifts, so this record carries the sorted names and their amounts.
+//   MBE   this file records max|C[i]| - the absolute value of a signed
+//         mass-balance residual - rather than metrics_collector.h's
+//         max(pm.C[i]), an unsigned max that reads 0 for a purely negative
+//         residual vector. The two are not comparable by construction.
+//   ASSEMBLAGE   G, Vs and Ms alone cannot see a lost trace phase: on one
+//         fixture native dropped five trace solids while G and Vs moved by
+//         only ~1e-6 RT and ~1e-10 respectively, so every scalar column read
+//         identical. This record carries the sorted present-phase names and
+//         their amounts so a name-set change is its own finding rather than
+//         invisible.
 //
 // ============================================================================
 // FILE FORMAT
@@ -210,35 +158,22 @@ struct Mode {
     long        okStatus;   ///< the GEM_run() code that means "converged"
 };
 
-/// EVERY MODE THE CI LANE KNOWS HOW TO RUN. Today: AIA and SIA, and nothing else.
+/// EVERY MODE THE CI LANE KNOWS HOW TO RUN: AIA and SIA, and nothing else.
 ///
-/// THE LIST IS THE DESIGN. The lane's mode coverage is a piece of DATA in one
-/// place, not a fact spread across the solve loop, the record and the CTest
-/// registration - so widening it later is an edit to this vector plus a
-/// re-recording, taken as a decision in one commit, and narrowing it is the same.
-/// The `--modes` option on both drivers selects a subset of this list; it can
-/// never introduce a mode that is not here.
+/// The lane's mode coverage is data in one place, not a fact spread across the
+/// solve loop, the record and the CTest registration - widening or narrowing it
+/// is an edit to this vector plus a re-recording. The `--modes` option on both
+/// drivers selects a subset of this list and can never introduce a mode outside
+/// it.
 ///
-/// WHY NO OPTIMA MODE IS IN IT. Owner instruction, 2026-09-08: the CI lane
-/// notices AIA and SIA and nothing else; Optima is benchmark work and stays in
-/// the benchmark lane. This is not a stub awaiting completion - it is the lane's
-/// declared scope.
-///
-/// WHAT ADDING ONE WOULD REQUIRE, so that a future editor does not do it by
-/// simply appending a row here:
-///   1. The `USE_OPTIMA_SOLVER` compile gate, on this header and on both
-///      drivers. It is load-bearing and not tidiness: NEED_GEM_AOP is an
-///      ordinary NODECODECH value present however GEMS3K was built, and
-///      TNode::GEM_run() deliberately FALLS BACK to native AIA with a logged
-///      warning when Optima is absent - so an ungated Optima row would record
-///      native's numbers under an Optima label and compare green forever.
-///   2. A jitter measurement PER MODE before any of its rows may be cost-pinned.
-///      The verdicts recorded against each Case below are native-cold ones and
-///      say nothing about any other path (see kPinWarmCost, which is the same
-///      point already biting SIA).
-///   3. A re-recording of tests/ci-baseline.txt, and a check that the lane still
-///      fits a CI budget - the Optima modes cost 25-60 s PER POINT on T-cement
-///      against native's ~12 ms.
+/// No Optima mode is included - Optima is benchmark work and stays in the
+/// benchmark lane. Adding one later needs the `USE_OPTIMA_SOLVER` compile gate on
+/// this header and both drivers: it is load-bearing, not tidiness, because
+/// TNode::GEM_run() falls back to native AIA with a logged warning when Optima is
+/// absent, so an ungated Optima row would silently record native's numbers under
+/// an Optima label. It also needs a per-mode jitter measurement before any row
+/// may be cost-pinned (see kPinWarmCost, which already applies to SIA) and a
+/// re-recording of tests/ci-baseline.txt.
 inline std::vector<Mode> knownModes()
 {
     return {
@@ -317,22 +252,20 @@ struct Case {
     std::string why;        ///< why this project is in the CI record at all
 };
 
-/// WARM rows (Mode::warm) are NEVER cost-pinned, on every project, and this is a
-/// gap rather than a judgement.
+/// WARM rows (Mode::warm) are NEVER cost-pinned, on every project - a named gap,
+/// not a judgement.
 ///
-/// The jitter verdicts recorded per case below all come from
-/// tools/iteration_jitter, which nudges bIC and re-solves COLD - it has no warm
-/// mode. So there is no measurement of whether a warm iteration count is stable
-/// under the same nudge, and pinning one would be exactly the single-draw
-/// reasoning CLAUDE.md s4 keeps warning about. The SIA rows therefore RECORD
-/// ITF/ITG/K2 - so the numbers are in the artefact and a human can diff them -
-/// and do not score them. Teaching iteration_jitter a warm mode is the work that
-/// would close this, and it is deliberately not in this commit.
+/// tools/iteration_jitter, the source of the jitter verdicts recorded per case
+/// below, nudges bIC and re-solves cold; it has no warm mode. So there is no
+/// measurement of whether a warm iteration count is stable under the same nudge,
+/// and pinning one would be exactly the single-draw reasoning this suite avoids
+/// elsewhere. SIA rows therefore record ITF/ITG/K2 - so the numbers are in the
+/// artefact and a human can diff them - but do not score them.
 constexpr bool kPinWarmCost = false;
 
 /// The projects in the CI record.
 ///
-/// Group 1 is the WHOLE main regression corpus (Resources/gems3k), minus the one
+/// Group 1 is the whole main regression corpus (Resources/gems3k), minus the one
 /// project that cannot be read at all. Listing every member by name rather than
 /// scanning the directory is the point: the list is what makes adding a project a
 /// decision instead of a CI failure.
@@ -340,9 +273,9 @@ constexpr bool kPinWarmCost = false;
 /// Group 2 is a small, deliberately chosen slice of Resources/gems3k-fail, for
 /// regimes the main corpus does not contain.
 ///
-/// The `jitter` string on each row is that project's NATIVE verdict from
-/// Docs/freeze/2026-09-08-STANDARD-cleanup-floor-bounded.txt, which is where the
-/// admission decision comes from.
+/// The `jitter` string on each row is that project's native verdict from the
+/// standard freeze that admitted it, which is where the admission decision
+/// comes from.
 inline std::vector<Case> cases()
 {
     const std::string A = "Resources/gems3k/";
@@ -436,10 +369,9 @@ inline std::vector<Case> cases()
       true,  "stable ITG:1.2x ITF:1.0x", "t_ twin of the o_ solvus point" },
 
     // ---- Group 2: Resources/gems3k-fail, regimes the main corpus lacks ----
-    // Chosen for STABILITY and CHEAPNESS, not for being hard: this record is a
-    // gate, and the hard-and-unstable members of that corpus are exactly what a
-    // gate must not be built on. The projects native is documented to collapse on
-    // stay in the benchmark lane where a spread can be measured properly.
+    // Chosen for stability and cheapness, not for being hard - a gate is not
+    // built on hard-and-unstable members. Projects native is documented to
+    // collapse on stay in the benchmark lane, where a spread can be measured.
     { "07PSIna_G_iron_1_0_1_25",
       B + "07PSIna_G_iron_1_0_1_25/07PSIna_G_iron_1_0_1_25-dat.lst",
       true,  "stable ITG:1.0x ITF:1.1x", "Fe redox system; its ironsi twin isolates the silica addition" },
@@ -462,19 +394,14 @@ inline std::vector<Case> cases()
       "NOTE the .lst stem disagrees with the directory name (M1-6_HSCdb-dat.lst)" },
 
     // ---- Group 3: Resources/gems3k-psina, the SIZE ladder ----
-    // Added on the owner's question, 2026-09-08: these run on the native path, so
-    // there is no reason of principle to leave them out. Measured the same day -
-    // all 28 read and solve, every native cold solve is cheap except five
-    // (complex x2, vcomplex x3) at 1.6-2.2 s.
+    // All 28 read and solve on the native path; every native cold solve is cheap
+    // except five (complex x2, vcomplex x3) at 1.6-2.2 s.
     //
-    // Cost-pinning follows the same rule as everywhere else, and here it bites
-    // hard: the freeze's JITTER column reads COUNT-UNSTABLE for EVERY T8 rung and
-    // for three of the five T14 rungs, so most of this group is recorded for its
-    // ANSWER and not its effort. That is the honest position - tests/
-    // TEST-CATALOGUE.md item 6b already warns that T8 axis 2 cannot do its own
-    // N^3 measurement because all five rungs' jitter bands overlap.
+    // Cost-pinning bites hard here: the jitter verdict reads COUNT-UNSTABLE for
+    // every T8 rung and for three of the five T14 rungs, so most of this group is
+    // recorded for its ANSWER and not its effort.
     //
-    // What the group buys is LARGE-SYSTEM answer coverage: T14_ball120 is 1287
+    // What the group buys is large-system answer coverage: T14_ball120 is 1287
     // species and T8_aq1138 is the other giant, and nothing else in this record
     // approaches them.
     // (the rows themselves)
@@ -592,19 +519,18 @@ inline std::vector<Case> cases()
       "T8 axis-2 ladder, varying the number of independent components" },
 
     // ---- Group 4: Resources/gems3k-proposed, the purpose-built systems ----
-    // Also added 2026-09-08 on the owner's question. Cheap (every native solve
-    // under 0.11 s) and they reach mechanisms no other group here does: T2b dials
-    // water's H:O = 2:1 rank deficiency as a controlled knob, T11 approaches a
-    // gas-phase appearance boundary by CO2 titration, T5 and T10 are the same
-    // chemistry apart from an Fe redox buffer, and T12 is the second cubic-EOS
-    // fixture.
+    // Cheap (every native solve under 0.11 s) and they reach mechanisms no other
+    // group here does: T2b dials water's H:O = 2:1 rank deficiency as a
+    // controlled knob, T11 approaches a gas-phase appearance boundary by CO2
+    // titration, T5 and T10 are the same chemistry apart from an Fe redox
+    // buffer, and T12 is the second cubic-EOS fixture.
     //
-    // These have NO jitter verdict in any freeze - the standard freeze covers
-    // gems3k, gems3k-fail and gems3k-psina only - so the verdicts below were
-    // MEASURED for this commit with `iteration_jitter <lst> 9 1e-15 native`:
-    // T1, T5, T10, T11 stable; T12 MBR-UNSTABLE (ITF 2.8x); T2b COUNT-UNSTABLE
-    // (ITG 35.6x, which is what a controlled rank deficiency does to an iteration
-    // count and is the project working as designed).
+    // These have no jitter verdict in the standard freeze (which covers gems3k,
+    // gems3k-fail and gems3k-psina only), so the verdicts below were measured
+    // directly with `iteration_jitter <lst> 9 1e-15 native`: T1, T5, T10, T11
+    // stable; T12 MBR-UNSTABLE (ITF 2.8x); T2b COUNT-UNSTABLE (ITG 35.6x, which
+    // is what a controlled rank deficiency does to an iteration count and is the
+    // project working as designed).
     { "T1",
       Q + "T1/T1-dat.lst",
       true , "stable ITG:1.0x ITF:1.0x",
@@ -634,18 +560,12 @@ inline std::vector<Case> cases()
 
 /// Which of the listed cases this CHECKOUT actually has, and what it is missing.
 ///
-/// Not every checkout carries every corpus. Measured 2026-09-09 on a fresh
-/// checkout of the first commit: `Resources/gems3k` is tracked, but
-/// `gems3k-fail`, `gems3k-psina` and `gems3k-proposed` are not, and three
-/// `gems3k` projects were added by hand and never committed either - so 23 of the
-/// 66 cases were present and 43 were not.
-///
-/// A missing corpus is NOT a finding. It is not a regression, not a fixture
-/// change, and not something a person can act on from a red build; erroring out
-/// would simply make the gate unusable anywhere but this machine. So absent cases
-/// are excluded from the run and COUNTED, and the count is printed prominently -
-/// a gate that quietly checks a third of what its record describes, while looking
-/// exactly as green as one that checked all of it, is the failure mode to avoid.
+/// Not every checkout carries every corpus (some are untracked). A missing
+/// corpus is not a finding - it is not a regression or a fixture change, and
+/// erroring out would just make the gate unusable anywhere but a full checkout.
+/// So absent cases are excluded from the run and counted, and the count is
+/// printed prominently rather than letting a partial run look as green as a
+/// full one.
 inline std::vector<Case> availableCases(const std::vector<Case>& all,
                                         std::map<std::string, int>& absentByCorpus)
 {
@@ -679,19 +599,17 @@ inline std::string availabilityNote(size_t nPresent, size_t nTotal,
     return o.str();
 }
 
-// PROJECTS DELIBERATELY ABSENT, and why - so the next reader does not re-derive it:
+// PROJECTS DELIBERATELY ABSENT:
 //
-//   f_PitzerTHE_G_KCaSO4_10_0_0_100_0  cannot be read at all. GEM_init fails on a
-//       file error, in an unmodified checkout too, since 2026-07-28
-//       (Docs/PROJECT_STATE.md). Its -fun.json differs from the j_ sibling, which
-//       has no such file. A row for it would assert "still unreadable", which is a
-//       claim about an export, not about the solver.
-//   T-cement  promoted into gems3k-fail on 2026-09-08, AFTER the standard freeze
-//       this list takes its jitter verdicts from, so there is no jitter
-//       measurement to admit or refuse its cost. It is also already covered by
-//       cement_water.native / cement_water.SIA, which are in the CI label.
+//   f_PitzerTHE_G_KCaSO4_10_0_0_100_0  cannot be read at all - GEM_init fails on
+//       a file error even in an unmodified checkout. Its -fun.json differs from
+//       the j_ sibling, which has no such file. A row for it would assert "still
+//       unreadable", a claim about an export, not the solver.
+//   T-cement  has no jitter measurement to admit or refuse its cost, and is
+//       already covered by cement_water.native / cement_water.SIA in the CI
+//       label.
 //   the rest of gems3k-fail  either jitter-unstable, or projects whose documented
-//       behaviour is a FAILURE that native finds under sweep. Both belong in the
+//       behaviour is a failure that native finds under sweep. Both belong in the
 //       benchmark lane.
 //   Resources/gems3k-psina, -proposed, under_review  size ladders, purpose-built
 //       systems and staging. Not regression material.
@@ -700,32 +618,21 @@ inline std::string availabilityNote(size_t nPresent, size_t nTotal,
 // Provenance: pinning the INPUTS a record was taken from
 // ---------------------------------------------------------------------------
 //
-// A frozen record answers "did the answer move". On its own it cannot tell you
-// WHY, and there are two entirely different reasons:
-//
-//     the SOLVER changed   - inputs identical, answer different. A regression.
-//     the FIXTURE changed  - somebody re-exported the project. Not a regression,
-//                            and re-recording is the correct response.
-//
-// Nothing distinguished them, and the difference decides what a person should do
-// next. So each project's row set carries a DIGEST OF THE FILES IT WAS PRODUCED
-// FROM, and a mismatch is reported as its own class, ranked above everything
-// else, instead of surfacing as a pile of ANSWER findings that look like a
-// regression and are not.
-//
-// This matters most exactly where this corpus is weakest: `CLAUDE.md` s4's
-// T-cement case is a fixture that was re-exported mid-flight, and the record
-// recorded before the re-export would have read as a regression afterwards.
+// A frozen record answers "did the answer move" but not why: a moved answer can
+// mean the solver changed (a regression) or the fixture changed (somebody
+// re-exported the project - not a regression, and re-recording is correct).
+// Each project's row set therefore carries a digest of the files it was produced
+// from, and a mismatch is reported as its own class, ranked above everything
+// else, instead of surfacing as ANSWER findings that look like a regression.
 //
 // WHAT IS HASHED: the `-dat.lst` itself and every file it names - the dch, the
 // ipm and the dbr - in the order listed. Not a directory scan: `ipmlog.txt`,
 // `metrics.json` and stray logs live in those directories and change on every
 // run, and hashing them would make the digest useless within one session.
 //
-// FNV-1a 64-bit, implemented here rather than pulled in: it needs no dependency,
-// it is stable across platforms and compilers by construction, and nothing about
-// this use is adversarial - it is guarding against a file having been rewritten,
-// not against someone forging one.
+// FNV-1a 64-bit, implemented here rather than pulled in: no dependency, stable
+// across platforms and compilers by construction, and not adversarial - it
+// guards against a file having been rewritten, not against someone forging one.
 
 inline unsigned long long fnv1a(const std::string& bytes, unsigned long long h = 1469598103934665603ULL)
 {
@@ -774,21 +681,18 @@ inline bool fixtureDigest(const std::string& lst, std::string& hex, int& nFiles)
 // ---------------------------------------------------------------------------
 
 /// The chain is the same either way - load the system, solve it, build a Row -
-/// and only the source of the Row it is compared against changes. Owner,
-/// 2026-09-08: "in both cases the chain should work ... just that the comparison
-/// should be made against external tables, files with results".
+/// and only the source of the Row it is compared against changes.
 ///
-///   Frozen  an EXTERNAL table (tests/ci-baseline.txt). The right reference for
-///           PRE-EXPORTED files, whose own stored results are not current:
-///           measured over this corpus, only 18 of 62 shipped -dbr files
-///           reproduce a fresh solve, and j_CASHNK stores IterDone 5818 against
-///           today's 82. Because the reference is external, the fixtures stay
-///           byte-stable and several tables can coexist (per library version, per
-///           settings profile) without touching the corpus.
-///   Stored  the results INSIDE the system files themselves. The right reference
-///           for a FRESHLY exported system, where they are current by
-///           construction and no external table can exist yet - and the only
-///           check available to a project sitting in Resources/under_review.
+///   Frozen  an external table (tests/ci-baseline.txt). The right reference for
+///           pre-exported files, whose own stored results are stale relative to
+///           the current library (most shipped -dbr files do not reproduce a
+///           fresh solve). Because the reference is external, the fixtures stay
+///           byte-stable and several tables can coexist (per library version,
+///           per settings profile) without touching the corpus.
+///   Stored  the results inside the system files themselves. The right reference
+///           for a freshly exported system, where they are current by
+///           construction and no external table can exist yet - the only check
+///           available to a project sitting in Resources/under_review.
 enum class Reference { Frozen, Stored };
 
 /// What may be scored against a given reference. Not a preference - each flag is
@@ -803,20 +707,17 @@ inline Scoring scoringFor(Reference r)
 {
     if (r == Reference::Frozen) return Scoring{true, true, ""};
 
-    // STATUS IS NOT SCORABLE AGAINST A STORED RESULT, because the field is an
-    // INPUT, not an output. CNode->NodeStatusCH in an exported file reads
-    // NEED_GEM_AIA (1) - the code asking for a cold solve - not the OK_GEM_AIA
-    // (2) that comes back. The exporter writes what the node should be ASKED to
-    // do. This is exactly why Resources/dbr_diff.json marks NodeStatusCH
-    // `ignored`, and it means the class at the TOP of the severity ranking has no
-    // counterpart here. Saying so is better than comparing an input to an output.
+    // Status is not scorable against a stored result, because the field is an
+    // input, not an output: CNode->NodeStatusCH in an exported file reads
+    // NEED_GEM_AIA (1), the code asking for a cold solve, not the OK_GEM_AIA (2)
+    // that comes back. The exporter writes what the node should be asked to do,
+    // which is also why Resources/dbr_diff.json marks NodeStatusCH `ignored`.
     //
-    // COST IS NOT SCORED EITHER, for two reasons that agree. IterDone is a real
-    // result, but it came from whatever GEMS3K the EXPORTER linked - comparing it
-    // to a fresh ITG is sound only if that is the same build. And a freshly
-    // exported system has no jitter measurement at all, so Case::costPinnable is
-    // false for it in any case (see the jitter discussion above). Both numbers
-    // are still RECORDED and printed; neither decides anything.
+    // Cost is not scored either: IterDone is a real result, but it came from
+    // whatever GEMS3K the exporter linked, so comparing it to a fresh ITG is
+    // sound only for the same build; a freshly exported system also has no
+    // jitter measurement, so Case::costPinnable is false for it regardless. Both
+    // numbers are still recorded and printed; neither decides anything.
     return Scoring{false, false,
         "stored-reference mode: STATUS not scored (NodeStatusCH in an export is a "
         "request, not a result) and iteration counts not scored (they come from "
@@ -839,13 +740,12 @@ struct Row {
     bool ran = false;       ///< false when the project could not even be read
 };
 
-/// True for the OK_* half of the status enum. BAD_* and ERR_* are both "not a
-/// trustworthy answer" here; the exact code is still compared, so a BAD->ERR move
-/// is still a finding - it is just described as a status change either way.
-/// True for the OK_* codes of the modes this lane knows. Kept as a set rather
-/// than compared against one Mode::okStatus so that a row read back from the
-/// record - which carries a mode NAME and a number, not a Mode - can still be
-/// classified.
+/// True for the OK_* codes of the modes this lane knows. BAD_* and ERR_* are
+/// both "not a trustworthy answer"; the exact code is still compared, so a
+/// BAD->ERR move is still a finding, described as a status change either way.
+/// Checked against the set of known OK codes, rather than one Mode::okStatus,
+/// so a row read back from the record - which carries a mode NAME and a number,
+/// not a Mode - can still be classified.
 inline bool statusIsOk(long st)
 {
     for (const auto& m : knownModes()) if (st == m.okStatus) return true;
@@ -867,11 +767,10 @@ inline bool statusIsOk(long st)
 /// answer" - the only check anything performs on the cold path's output, since
 /// GEM_run()'s cold path does not verify the answer it returns.
 ///
-/// On a FAILED row every packed value is STALE: GEM_run()'s catch never calls
-/// packDataBr(), so CNode still holds the input file's numbers (CLAUDE.md s4).
-/// The row is still recorded - the STATUS is the finding - but compareRow() stops
-/// at the status so that a flip reads as one finding and not as a hundred
-/// spurious ANSWER findings.
+/// On a failed row every packed value is stale: GEM_run()'s catch never calls
+/// packDataBr(), so CNode still holds the input file's numbers. The row is still
+/// recorded - the status is the finding - but compareRow() stops at the status
+/// so a flip reads as one finding and not as a hundred spurious ANSWER findings.
 inline Row solveOne(const Case& c, const Mode& m)
 {
     Row r;
@@ -923,25 +822,21 @@ inline Row solveOne(const Case& c, const Mode& m)
     return r;
 }
 
-/// Read the results a system file ALREADY CARRIES, without solving anything.
+/// Read the results a system file already carries, without solving anything.
 ///
-/// This is the whole of the "stored" reference, and it needs no JSON parser and
-/// no format switch: GEM_init() loads the -dbr into CNode, and unpackDataBr() -
+/// This is the whole of the "stored" reference, and needs no JSON parser or
+/// format switch: GEM_init() loads the -dbr into CNode, and unpackDataBr() -
 /// which would overwrite it from the solver's own state - is called inside
-/// GEM_run(), not GEM_init(). So immediately after init the node HOLDS the file's
+/// GEM_run(), not GEM_init(). So immediately after init the node holds the file's
 /// stored results, and the same accessors the solve path uses read them back:
-/// Ph_Moles(k) is CNode->xPH[k] (node2.cpp:812), cVs()/cMs() are CNode->Vs/Ms.
-/// That works for every export format the reader supports, text ones included -
-/// which matters, because 4 of the corpus's projects are not JSON at all.
+/// Ph_Moles(k) is CNode->xPH[k], cVs()/cMs() are CNode->Vs/Ms. That works for
+/// every export format the reader supports, including the text ones.
 ///
-/// The two fields that do NOT go through an accessor are read from CNode
-/// directly and on purpose:
-///   Gs        Get_GibbsEnergy() routes through multi_ptr()->TotalGibbsEnergy(),
-///             i.e. the SOLVER's state, which after a bare GEM_init has not been
-///             unpacked from the file. CNode->Gs is the stored number, and it is
-///             the same quantity to every digit - verified on the 18 projects
-///             whose stored value still reproduces.
-///   status    CNode->NodeStatusCH, recorded so it can be PRINTED. It is a
+/// Two fields are read from CNode directly rather than through an accessor:
+///   Gs        Get_GibbsEnergy() routes through the solver's own state, which
+///             after a bare GEM_init has not been unpacked from the file.
+///             CNode->Gs is the stored number instead.
+///   status    CNode->NodeStatusCH, recorded so it can be printed. It is a
 ///             request code, never scored - see scoringFor().
 inline bool storedRow(const Case& c, const Mode& m, Row& r)
 {
@@ -977,17 +872,15 @@ inline bool storedRow(const Case& c, const Mode& m, Row& r)
 /// True when a system file carries NO stored result - it was exported as a
 /// definition, without a calculation.
 ///
-/// This is a DIFFERENT outcome from "the stored result differs", and conflating
-/// them makes the fresh-export report actively misleading exactly where it is
-/// most needed. Found immediately on first use: `Resources/gems3k-proposed/T10`
-/// stores Ms = 0, Vs = 0 and an empty assemblage, and comparing a real solve
-/// against those zeros produced five ANSWER findings and a pH finding, none of
-/// which mean anything.
+/// This is a different outcome from "the stored result differs", and conflating
+/// them makes the fresh-export report actively misleading: a system exported
+/// with Ms = 0, Vs = 0 and an empty assemblage compared against a real solve
+/// would otherwise produce a pile of meaningless ANSWER and pH findings.
 ///
-/// Ms is the discriminator: the reactive mass of any real system is positive, and
-/// a file that has been through a solve always carries it. The empty assemblage
-/// is required as well so that a genuinely mass-free system, if one ever existed,
-/// could not be misread.
+/// Ms is the discriminator: the reactive mass of any real system is positive,
+/// and a file that has been through a solve always carries it. The empty
+/// assemblage is required as well so a genuinely mass-free system could not be
+/// misread.
 inline bool hasNoStoredResult(const Row& r)
 {
     return r.Ms <= 0. && r.nPh == 0;
@@ -1005,7 +898,7 @@ inline std::vector<Case> scanForSystems(const std::string& dir)
     std::vector<Case> out;
     // Glob for *-dat.lst; never derive it from the directory name. Several stems
     // in this corpus disagree with their directory (T8_aq101/T8_aq0101-dat.lst,
-    // CASH+_G_csh_sol/csh_sol-dat.lst) - CLAUDE.md s4.
+    // CASH+_G_csh_sol/csh_sol-dat.lst).
     for (const auto& e : std::filesystem::directory_iterator(dir)) {
         if (!e.is_directory()) continue;
         for (const auto& f : std::filesystem::directory_iterator(e.path())) {
@@ -1043,18 +936,15 @@ inline std::string phasesField(const Row& r)
 
 /// The provenance block: what this record was produced by, and from what.
 ///
-/// Deliberately more than a timestamp. A frozen record is only reproducible if a
-/// reader can tell whether their situation matches the one it was taken in, and
-/// the things that move a floating-point answer are the library, the compiler and
-/// the platform - so those are named. The tolerances are here too, because they
-/// are the record's own contract and reading them out of a header file to
-/// interpret a diff is a step nobody takes.
+/// Deliberately more than a timestamp: it names the library version, compiler
+/// and platform (the things that move a floating-point answer) and the scoring
+/// tolerances, so a reader can tell whether their situation matches the one the
+/// record was taken in.
 ///
-/// What is NOT here, and why: a git commit for either repo. It could be plumbed
-/// in as a compile definition, but the recorder is normally run from a build
-/// directory configured long ago, so the value baked into it would be whatever
-/// was checked out THEN - a stale sha recorded as current is worse than no sha at
-/// all. The per-project input digests below are what actually pins the corpus.
+/// Deliberately excludes a git commit for either repo: the recorder normally
+/// runs from a build directory configured long ago, so a compiled-in sha would
+/// reflect whatever was checked out then, not now. The per-project input
+/// digests are what actually pins the corpus.
 inline std::string provenance(const std::string& modeSpec, size_t nRows, size_t nProjects)
 {
     char when[32] = "unknown";
@@ -1127,12 +1017,10 @@ inline bool parseRow(const std::string& line, Row& r)
              >> r.G >> r.pH >> r.Eh >> r.Vs >> r.Ms >> r.nPh >> r.mbe))
         return false;
     if (r.project == "PROJECT") return false;                  // the header line
-    // PHASES is the LAST field and is read as the whole remainder of the line,
+    // PHASES is the last field and is read as the whole remainder of the line,
     // not with >>. GEMS3K phase names contain spaces - "Alkali feldspar" on the
-    // solvus projects - so a whitespace-extracted field silently truncates the
-    // assemblage to its first word, every recorded phase then parses away, and
-    // the check reports a full assemblage change on four projects that had not
-    // moved at all. (Found exactly that way on this file's first self-check.)
+    // solvus projects - so a whitespace-extracted field would silently truncate
+    // the assemblage to its first word and read as a spurious assemblage change.
     std::getline(ss, ph);
     const size_t nb = ph.find_first_not_of(" \t");
     ph = (nb == std::string::npos) ? std::string() : ph.substr(nb);

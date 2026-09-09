@@ -44,7 +44,6 @@ void JsonFile::update_compare_map(const nlohmann::json &data)
 
     auto datafields = data["datafields"];
     for(auto& fld: datafields)  {
-        //std::cout << fld["datakey"]  << " : " << fld["compare"]  << " : " << fld["eps"]  << " : " << std::endl;
         if( fld["ignored"].is_boolean() && fld["ignored"] ) {
             ignored_keys.insert( fld["datakey"].get<std::string>() );
         }
@@ -58,11 +57,6 @@ void JsonFile::update_compare_map(const nlohmann::json &data)
             compare_map[ fld["datakey"] ].method = FloatCompareMethod::get_method(fld["compare"]);
         }
     }
-
-    //for( const auto& el: compare_map )
-    //  std::cout << el.first << " " << el.second.method << " " << el.second.epsilon << std::endl;
-    //for( const auto& el: ignored_keys )
-    //  std::cout << el << std::endl;
 }
 
 bool JsonFile::exist()
@@ -142,8 +136,7 @@ std::string JsonFile::diff_array(const nlohmann::json &lval, const nlohmann::jso
     int ii = 0;
     std::ostringstream iss;
 
-    // If the number of values is different for this field in compared files, the comparison fails
-    //    and the numbers of values is reported for both files.
+    // If the arrays differ in size, report the size mismatch instead of diffing elementwise.
     if(lval.size() > rval.size() ||
         ( lval.size() < rval.size() && json_comp.method() == Comparator::Difference )) {
         return  json_comp.size_diff_string(lval.size(), rval.size());
@@ -155,7 +148,6 @@ std::string JsonFile::diff_array(const nlohmann::json &lval, const nlohmann::jso
         auto ret_diff = diff_json(*lval_it, *rval_it);
         if(!ret_diff.empty()) {
             iss <<  ii << ": " << ret_diff << std::endl;
-            // Think about recursion arrays => use yaml?
         }
         ++lval_it;
         ++rval_it;
@@ -173,7 +165,6 @@ std::string JsonFile::diff_object(const nlohmann::json &lval, const nlohmann::js
     auto rval_it = rval.begin();
     while(lval_it != lval.end()) {
         auto key =  lval_it.key();
-        //std::cout << key << std::endl;
         auto ignored_it =  ignored_keys.find(key);
         if(ignored_it !=  ignored_keys.end()) {
             ++lval_it;
@@ -193,7 +184,6 @@ std::string JsonFile::diff_object(const nlohmann::json &lval, const nlohmann::js
             auto ret_diff= diff_json(lval_it.value(), rval_it.value());
             if(!ret_diff.empty()) {
                 oss <<  key << ": " <<  ret_diff << " \n";
-                // Think about recursion arrays => use yaml?
             }
         }
         else {

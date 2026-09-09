@@ -191,7 +191,6 @@ void ComparisonPerformer::show_usage(const std::string &name)
 int ComparisonPerformer::extract_args(int argc, char* argv[])
 {
     int i=0;
-    //std::string template_diff_json; // = "template_diff.json"; // default
     std::string eps = std::to_string( std::numeric_limits<double>::epsilon());
 
     for(i = 1; i < argc; ++i) {
@@ -233,7 +232,6 @@ int ComparisonPerformer::extract_args(int argc, char* argv[])
                 return 1;
             }
         }
-        //"\t-rd,\t--rules-document JSONF  \tstructured document describing data to compare\n\n"
         else if((arg == "-rd") || (arg == "--rules-document")) {
             if (i + 1 < argc) {
                 template_diff_json = argv[++i];

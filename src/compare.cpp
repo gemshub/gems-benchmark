@@ -8,7 +8,6 @@ std::string Comparator::source_name = "right";
 
 std::string Comparator::size_diff_string(size_t lval_size, size_t rval_size) const
 {
-    // Think about recursion arrays => use yaml?
     std::ostringstream oss;
     oss <<  "The number of values is different: " <<
         templ_name << " = " << lval_size << " " << source_name << " = " << rval_size;
@@ -17,7 +16,6 @@ std::string Comparator::size_diff_string(size_t lval_size, size_t rval_size) con
 
 std::string Comparator::keys_diff_string(bool is_left, std::set<std::string> keys) const
 {
-    // Think about recursion arrays => use yaml?
     std::ostringstream oss;
     oss << "Present only in ";
     if(is_left) {
