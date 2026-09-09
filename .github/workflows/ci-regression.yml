@@ -1,0 +1,94 @@
+# The CI LANE - "did this commit change an answer or an iteration count?"
+#
+# Separate from ci-build.yml, which only proves the project COMPILES on three
+# platforms. This one runs the regression gate.
+#
+# IT BUILDS GEMS3K ITSELF, AT STOCK DEFAULTS, AND PASSES NO SOLVER OPTION.
+# That is not a shortcut - it is what makes the lane native by CONSTRUCTION:
+#
+#     USE_OPTIMA_SOLVER   OFF  by default   (GEMS3K/GEMS3K/CMakeLists.txt)
+#     USE_THERMOFUN       ON   by default   (GEMS3K/CMakeLists.txt)
+#
+# With Optima absent from the library, difftestFindDeps.cmake auto-detects
+# GEMS3K_HAS_OPTIMA = FALSE, so tests/CMakeLists.txt registers no Optima case and
+# compiles -DUSE_OPTIMA_SOLVER into nothing. ThermoFun stays on because 21 of the
+# 66 recorded projects ship a `-fun.json` and would otherwise be unreadable - it
+# is on because it is the default, which is the point of passing no config.
+#
+# The recipe lives in tools/ci.sh, not in this file, so the same command is
+# runnable by hand on a developer machine. A CI lane only CI can reproduce is not
+# worth having.
+#
+# WHY LINUX ONLY. Every path in the gate is repo-relative and every fixture is a
+# checked-in export, so the gate itself is portable - but the answer it scores is
+# a floating-point one, compared at 1e-9 relative on G/Vs/Ms. Whether that holds
+# across compilers and libm implementations is a MEASUREMENT nobody has taken
+# here. Taking it is worth doing; asserting it untested would produce a red job on
+# macOS and a fortnight of arguing about a tolerance.
+name: ci-regression
+
+on:
+  push:
+    branches: [ develop, main, master ]
+  pull_request:
+    branches: [ develop, main, master ]
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      # Side by side, because tools/ci.sh looks for GEMS3K beside this repo by
+      # default. --gems3k-src overrides it if a runner wants another layout.
+      - name: Checkout gems-benchmark
+        uses: actions/checkout@v4
+        with:
+          path: gems-benchmark
+
+      - name: Checkout GEMS3K
+        uses: actions/checkout@v4
+        with:
+          repository: sdmytrievs/GEMS3K
+          path: GEMS3K
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-activate-base: true
+          channels: conda-forge
+
+      # The environment supplies the compilers, ThermoFun, ChemicalFun, eigen and
+      # nlohmann_json. It does NOT supply GEMS3K, and conda-install-dependencies.sh
+      # is deliberately NOT run: that script builds GEMS3K with its own flags into
+      # $CONDA_PREFIX, and the whole point here is that the library under test is
+      # built from the checked-out source at stock defaults, by tools/ci.sh.
+      - name: Create the environment
+        run: |
+          conda config --set always_yes yes --set changeps1 no
+          conda config --add channels conda-forge
+          conda env create -f gems-benchmark/environment.devenv.yml -n gems-benchmark
+
+      - name: Run the CI regression lane
+        run: |
+          conda activate gems-benchmark
+          cd gems-benchmark
+          ./tools/ci.sh --build-dir build-ci
+
+      # The gate prints the offending rows on failure, but the recorded file is
+      # what a human needs to diff against, and the build logs say which library
+      # was actually linked. Uploading them makes a red run self-contained.
+      - name: Upload the record and logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-baseline-and-logs
+          path: |
+            gems-benchmark/tests/ci-baseline.txt
+            gems-benchmark/build-ci/configure.log
+            gems-benchmark/build-ci/gems3k-configure.log
+            gems-benchmark/build-ci/gems3k-build.log
+            gems-benchmark/build-ci/Testing/**/LastTest.log
+          if-no-files-found: ignore
