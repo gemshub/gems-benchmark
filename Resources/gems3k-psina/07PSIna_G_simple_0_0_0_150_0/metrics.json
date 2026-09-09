@@ -1,0 +1,68 @@
+[
+    {
+        "convergence": {
+            "condition_number": null,
+            "condition_number_diag": null,
+            "converged": false,
+            "dikin_criterion": 9.99999e-06,
+            "mass_balance_error": 1.8534994215933392e-12,
+            "return_code": 0,
+            "return_status": 2
+        },
+        "iterations": {
+            "global": 36,
+            "ipm": 36,
+            "mbr": 9,
+            "phase_loops": 1,
+            "total": 0
+        },
+        "performance": {
+            "condnum_time_ms": 0.058281,
+            "per_iteration_ms": 0.0,
+            "per_second": 0.0,
+            "solve_call_count": 46,
+            "solve_time_ms": 0.255006,
+            "total_ms": 0.681209
+        },
+        "run_number": 0,
+        "stats": [
+            {
+                "label": "A: same input, warm start",
+                "max_time_ms": 0.683505,
+                "mean_time_ms": 0.07807539999999999,
+                "median_time_ms": 0.033785499999999996,
+                "min_time_ms": 0.017975,
+                "run_number": 100,
+                "stddev_time_ms": 0.1472028655701376
+            },
+            {
+                "label": "D: same input, cold start",
+                "max_time_ms": 0.723984,
+                "mean_time_ms": 0.46946519999999997,
+                "median_time_ms": 0.4811665,
+                "min_time_ms": 0.304116,
+                "run_number": 100,
+                "stddev_time_ms": 0.09325087788283817
+            },
+            {
+                "label": "C: composition sweep ±5%, warm",
+                "max_time_ms": 142.169233,
+                "mean_time_ms": 3.4790205099999985,
+                "median_time_ms": 1.3791295,
+                "min_time_ms": 0.038568,
+                "run_number": 100,
+                "stddev_time_ms": 14.41786971230826
+            },
+            {
+                "label": "E: composition sweep ±5%, cold",
+                "max_time_ms": 10.246514,
+                "mean_time_ms": 1.4601104400000002,
+                "median_time_ms": 1.0461770000000001,
+                "min_time_ms": 0.319285,
+                "run_number": 100,
+                "stddev_time_ms": 1.3168245950518036
+            }
+        ],
+        "system_id": "../../Resources/gems3k-psina/07PSIna_G_simple_0_0_0_150_0/07PSIna_G_simple_0_0_0_150_0-dat.lst"
+    }
+]

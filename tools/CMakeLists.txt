@@ -11,7 +11,12 @@ set(Tools
        thread_test
        recalc_all
        compare_dirs
-       collect_metrics)
+       collect_metrics
+       # The CI lane's recorder AND its gate: ci_baseline --check re-measures the
+       # corpus and scores it against the frozen record in tests/ci-baseline.txt,
+       # exiting non-zero on any finding. Native (AIA/SIA) only by design - see
+       # include/difftest/ci_baseline.h. tools/ci.sh drives it.
+       ci_baseline)
 
 foreach (toolName ${Tools})
     add_executable(${toolName} ${toolName}.cpp)

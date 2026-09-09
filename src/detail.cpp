@@ -3,7 +3,7 @@
 
 namespace difftest {
 
-//  Function that can be used to split text using regexp.
+// Splits str into tokens on rgx_str, trimming each token.
 std::vector<std::string> regexp_split(const std::string& str, std::string rgx_str)
 {
     std::vector<std::string> lst;
@@ -20,7 +20,6 @@ std::vector<std::string> regexp_split(const std::string& str, std::string rgx_st
         }
     }
     return lst;
-    // ????  in "" use as 1 string
 }
 
 bool regexp_test(const std::string& str, std::string rgx_str)
@@ -29,7 +28,7 @@ bool regexp_test(const std::string& str, std::string rgx_str)
     return std::regex_match(str , rx);
 }
 
-//  Function that can be used to extract tokens using regexp.
+// Extracts the substrings matching rgx_str, trimming each match.
 std::vector<std::string> regexp_extract(const std::string& str, std::string rgx_str)
 {
     std::vector<std::string> lst;
@@ -45,7 +44,7 @@ std::vector<std::string> regexp_extract(const std::string& str, std::string rgx_
     return lst;
 }
 
-//  Function that can be used to replace text using regex.
+// Replaces all matches of rgx_str in instr with replacement.
 std::string regexp_replace(const std::string& instr, const std::string& rgx_str, const std::string& replacement )
 {
     std::regex re(rgx_str);
@@ -55,7 +54,7 @@ std::string regexp_replace(const std::string& instr, const std::string& rgx_str,
 
 void replaceall(std::string &str, const std::string &old_part, const std::string &new_part)
 {
-    size_t posb=0, pos = str.find( old_part ); //rfind( old_part );
+    size_t posb=0, pos = str.find( old_part );
     while(pos != std::string::npos) {
         std::string res(str.substr(0, pos));
         res += new_part;

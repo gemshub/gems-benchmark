@@ -31,6 +31,8 @@ struct ConvergenceMetrics {
     bool converged = false;       // pm.MK == 1
     double mass_balance_error = 0.0; // max(pm.C[i])
     double dikin_criterion = 0.0; // pm.PCI
+    double condition_number = 0.0;      // pm.CondNum (worst case this call)
+    double condition_number_diag = 0.0; // pm.CondNumDiag (worst case this call)
 };
 
 void to_json(nlohmann::json& j, const ConvergenceMetrics& p);
@@ -41,6 +43,9 @@ struct PerformanceMetrics {
     double total_time_ms = 0.0;
     double time_per_iteration_ms = 0.0;
     double calculations_per_second = 0.0;
+    double solve_time_ms = 0.0;      // pm.SolveTimeMs: time in MakeAndSolveSystemOfLinearEquations()
+    double condnum_time_ms = 0.0;    // pm.CondNumTimeMs: subset of solve_time_ms spent on condition-number diagnostics
+    int solve_call_count = 0;        // pm.SolveCallCount: number of linear-solve calls this GEM_run()
 };
 
 void to_json(nlohmann::json& j, const PerformanceMetrics& p);
@@ -151,6 +156,7 @@ private:
     // Data collection
     void recordIterations(const MULTI& pm);
     void recordConvergence(const MULTI& pm);
+    void recordPhaseTiming(const MULTI& pm);
     void recordPerformance();
     // Task performers
     bool init_task(const std::string& path_to_lst);

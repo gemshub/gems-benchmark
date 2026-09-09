@@ -67,6 +67,21 @@ Options:
 
 ```
 
+### param_sensitivity_test
+
+*param_sensitivity_test* the CLI utility to catch a specific regression: a solution-phase
+interaction parameter change that produces no measurable change in the equilibrium result
+(e.g. a trace species pinned at the numerical floor). Runs the Ti-in-Quartz
+`TiQ_PRSV_G_MySystem` project twice with different QtzRu Margules interaction parameters and
+asserts both runs converge and produce a measurably different mole fraction for the Rutile
+end-member in the QtzRu solid solution. Prints per-run wall-clock time, GEMS3K's own
+iteration counts, and (when GEMS3K was built with `-DENABLE_BENCHMARK_DIAGNOSTICS=ON`) the
+condition-number/solve-time diagnostics; on any non-convergence it prints GEMS3K's own error
+code/message instead of silently comparing garbage.
+
+```sh
+> ./param_sensitivity_test gems3k/j_TiQ_PRSV_G_MySystem_0_0_10000_900_0/j_TiQ_PRSV_G_MySystem_0_0_10000_900_0-dat.lst
+```
 
 
 

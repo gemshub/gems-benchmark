@@ -37,7 +37,6 @@ bool KeyValueJsonFile::load_all()
     }
 
     auto fdata = read_ascii_file(file_path);
-    // Internal structure of file data
     auto file_data = load_key_value_pairs(fdata);
     return set_to_json(file_data);
 }
@@ -59,7 +58,6 @@ std::map<std::string,std::string> KeyValueJsonFile::load_key_value_pairs(const s
     auto value = datas.begin()+1;
     for(auto key: headers) {
         trim(key, "<>");
-        //std::cout << key << "\n" <<  *value << std::endl;
         if(value < datas.end()) {
             file_data[key] = *value;
             value++;

@@ -1,0 +1,68 @@
+[
+    {
+        "convergence": {
+            "condition_number": null,
+            "condition_number_diag": null,
+            "converged": false,
+            "dikin_criterion": 9.99999e-06,
+            "mass_balance_error": 0.0,
+            "return_code": 0,
+            "return_status": 2
+        },
+        "iterations": {
+            "global": 40,
+            "ipm": 40,
+            "mbr": 5,
+            "phase_loops": 1,
+            "total": 0
+        },
+        "performance": {
+            "condnum_time_ms": 0.06923199999999999,
+            "per_iteration_ms": 0.0,
+            "per_second": 0.0,
+            "solve_call_count": 46,
+            "solve_time_ms": 0.14092199999999996,
+            "total_ms": 2.233991
+        },
+        "run_number": 0,
+        "stats": [
+            {
+                "label": "A: same input, warm start",
+                "max_time_ms": 0.230881,
+                "mean_time_ms": 0.030237209999999997,
+                "median_time_ms": 0.0264935,
+                "min_time_ms": 0.02123,
+                "run_number": 100,
+                "stddev_time_ms": 0.027140553398298652
+            },
+            {
+                "label": "D: same input, cold start",
+                "max_time_ms": 4.31471,
+                "mean_time_ms": 0.6636574599999999,
+                "median_time_ms": 0.4044575,
+                "min_time_ms": 0.304635,
+                "run_number": 100,
+                "stddev_time_ms": 0.6963573838387215
+            },
+            {
+                "label": "C: composition sweep ±5%, warm",
+                "max_time_ms": 1.253772,
+                "mean_time_ms": 0.23632866999999996,
+                "median_time_ms": 0.152078,
+                "min_time_ms": 0.032591,
+                "run_number": 100,
+                "stddev_time_ms": 0.2393143460065884
+            },
+            {
+                "label": "E: composition sweep ±5%, cold",
+                "max_time_ms": 2.425293,
+                "mean_time_ms": 0.44684788,
+                "median_time_ms": 0.3725995,
+                "min_time_ms": 0.296475,
+                "run_number": 100,
+                "stddev_time_ms": 0.2709920360056834
+            }
+        ],
+        "system_id": "../../Resources/gems3k-fail/LBE-6_G_M1-6_HSCdb/M1-6_HSCdb-dat.lst"
+    }
+]

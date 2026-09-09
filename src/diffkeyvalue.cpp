@@ -33,7 +33,6 @@ void KeyValueFile::updateTemplateDiff(const std::string &template_diff_json)
 
     auto datafields = data["datafields"];
     for(auto& fld: datafields) {
-        //std::cout << fld["datakey"]  << " : " << fld["compare"]  << " : " << fld["eps"]  << " : " << std::endl;
         if( fld["ignored"].is_boolean() && fld["ignored"] ) {
             ignored_keys.insert( fld["datakey"].get<std::string>() );
         }
@@ -47,11 +46,6 @@ void KeyValueFile::updateTemplateDiff(const std::string &template_diff_json)
             compare_map[ fld["datakey"] ].method = FloatCompareMethod::get_method( fld["compare"] );
         }
     }
-
-    //for( const auto& el: compare_map )
-    //  std::cout << el.first << " " << el.second.method << " " << el.second.epsilon << std::endl;
-    //for( const auto& el: ignored_keys )
-    //  std::cout << el << std::endl;
 }
 
 bool KeyValueFile::exist() const
@@ -80,7 +74,6 @@ bool KeyValueFile::load_all()
 
     auto value = datas.begin()+1;
     for(const auto& key: headers) {
-        // std::cout << key << "\n" <<  *value << std::endl;
         if(value < datas.end()) {
             file_data[key] = *value;
             value++;
@@ -194,7 +187,6 @@ std::string KeyValueFile::diff_structured(const std::map<std::string,std::string
             auto ret_diff = !comp.compare(lval_it->second, rval_it->second);
             if(ret_diff)  {
                 oss <<  key << ": " <<  comp.getDifference() << " \n";
-                // Think about recursion arrays => use yaml?
             }
         }
         else {

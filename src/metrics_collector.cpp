@@ -174,7 +174,6 @@ BenchmarkResult MetricsCollector::getResult(std::string path)
     result.system_id = path_to_lst;
 
     if(!init_task(path_to_lst)) {
-        // exception or error message
         return result;
     }
 
@@ -199,7 +198,7 @@ BenchmarkResult MetricsCollector::getResult(std::string path)
     }
 
     if(statistic_perturb_set) {
-        //Generate an iterable of (T, P, b) tuples (composition, T or P sweeps)
+        // Generate an iterable of (T, P, b) tuples (composition, T or P sweeps).
         std::vector<DataTuple> perturb_tuple;
         for(int i = 0; i<N; ++i) {
             perturb_tuple.push_back(generate_perturb_set(i, T0, P0, b0));
@@ -223,7 +222,7 @@ bool MetricsCollector::init_task(const std::string &path_to_lst)
     // Creates TNode structure instance accessible through the "node" pointer
     node.reset(new TNode());
 
-    // Initialization of GEMS3K internal data by reading  files
+    // Initialization of GEMS3K internal data by reading files
     if( node->GEM_init(path_to_lst.c_str()) ) {
         std::cout << "error occured during reading the files: " << path_to_lst << std::endl;
         return false;
