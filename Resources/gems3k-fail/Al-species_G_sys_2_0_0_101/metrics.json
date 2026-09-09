@@ -1,0 +1,68 @@
+[
+    {
+        "convergence": {
+            "condition_number": null,
+            "condition_number_diag": null,
+            "converged": false,
+            "dikin_criterion": 9.99999e-07,
+            "mass_balance_error": 1.655270369734619e-11,
+            "return_code": 0,
+            "return_status": 2
+        },
+        "iterations": {
+            "global": 266,
+            "ipm": 266,
+            "mbr": 21,
+            "phase_loops": 1,
+            "total": 0
+        },
+        "performance": {
+            "condnum_time_ms": 0.6531460000000004,
+            "per_iteration_ms": 0.0,
+            "per_second": 0.0,
+            "solve_call_count": 289,
+            "solve_time_ms": 1.2857219999999996,
+            "total_ms": 6.933134
+        },
+        "run_number": 0,
+        "stats": [
+            {
+                "label": "A: same input, warm start",
+                "max_time_ms": 8.121507,
+                "mean_time_ms": 4.754883210000002,
+                "median_time_ms": 4.4946205,
+                "min_time_ms": 3.16456,
+                "run_number": 100,
+                "stddev_time_ms": 0.8906092158017039
+            },
+            {
+                "label": "D: same input, cold start",
+                "max_time_ms": 7.595431,
+                "mean_time_ms": 4.83075835,
+                "median_time_ms": 4.614506,
+                "min_time_ms": 3.890552,
+                "run_number": 100,
+                "stddev_time_ms": 0.7354072498089528
+            },
+            {
+                "label": "C: composition sweep ±5%, warm",
+                "max_time_ms": 6.569077,
+                "mean_time_ms": 1.2432538900000003,
+                "median_time_ms": 0.9826255,
+                "min_time_ms": 0.126995,
+                "run_number": 100,
+                "stddev_time_ms": 1.103542155168373
+            },
+            {
+                "label": "E: composition sweep ±5%, cold",
+                "max_time_ms": 37.925934,
+                "mean_time_ms": 2.0583270700000007,
+                "median_time_ms": 1.101157,
+                "min_time_ms": 0.611181,
+                "run_number": 100,
+                "stddev_time_ms": 3.9291421210124735
+            }
+        ],
+        "system_id": "../../Resources/gems3k-fail/Al-species_G_sys_2_0_0_101/Al-species_G_sys_2_0_0_101-dat.lst"
+    }
+]

@@ -1,0 +1,68 @@
+[
+    {
+        "convergence": {
+            "condition_number": null,
+            "condition_number_diag": null,
+            "converged": false,
+            "dikin_criterion": 9.99999e-07,
+            "mass_balance_error": 4.441491748746749e-20,
+            "return_code": 0,
+            "return_status": 3
+        },
+        "iterations": {
+            "global": 62,
+            "ipm": 62,
+            "mbr": 14,
+            "phase_loops": 6,
+            "total": 0
+        },
+        "performance": {
+            "condnum_time_ms": 0.19704999999999998,
+            "per_iteration_ms": 0.0,
+            "per_second": 0.0,
+            "solve_call_count": 82,
+            "solve_time_ms": 0.48097899999999993,
+            "total_ms": 1.544843
+        },
+        "run_number": 0,
+        "stats": [
+            {
+                "label": "A: same input, warm start",
+                "max_time_ms": 9.767237,
+                "mean_time_ms": 2.648268549999998,
+                "median_time_ms": 2.2989829999999998,
+                "min_time_ms": 1.844255,
+                "run_number": 100,
+                "stddev_time_ms": 1.0130409372328877
+            },
+            {
+                "label": "D: same input, cold start",
+                "max_time_ms": 3.336295,
+                "mean_time_ms": 1.6419352899999995,
+                "median_time_ms": 1.4547629999999998,
+                "min_time_ms": 1.167125,
+                "run_number": 100,
+                "stddev_time_ms": 0.44344303174485206
+            },
+            {
+                "label": "C: composition sweep ±5%, warm",
+                "max_time_ms": 6.965052,
+                "mean_time_ms": 1.9394635899999997,
+                "median_time_ms": 1.5519020000000001,
+                "min_time_ms": 0.142526,
+                "run_number": 100,
+                "stddev_time_ms": 1.4649675686123167
+            },
+            {
+                "label": "E: composition sweep ±5%, cold",
+                "max_time_ms": 4.483825,
+                "mean_time_ms": 1.5744976800000003,
+                "median_time_ms": 1.3762105,
+                "min_time_ms": 0.545784,
+                "run_number": 100,
+                "stddev_time_ms": 0.867731106323726
+            }
+        ],
+        "system_id": "../../Resources/gems3k-fail/3Bent-H2O_G_MySystem_1_0_1_25_0/3Bent-H2O_G_MySystem_1_0_1_25_0-dat.lst"
+    }
+]

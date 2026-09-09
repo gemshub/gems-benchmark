@@ -42,6 +42,7 @@
     "pa_DFYc": 1e-05,
     "pa_DFYs": 1e-06,
     "pa_DW": 1,
+    "pa_OptimaStallWindow": 500,
     "pa_DT": 0,
     "pa_GAS": 0.001,
     "pa_DG": 1000,

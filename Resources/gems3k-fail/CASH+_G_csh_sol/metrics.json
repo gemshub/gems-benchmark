@@ -1,0 +1,68 @@
+[
+    {
+        "convergence": {
+            "condition_number": null,
+            "condition_number_diag": null,
+            "converged": false,
+            "dikin_criterion": 4.999995e-06,
+            "mass_balance_error": 2.96045410873715e-15,
+            "return_code": 0,
+            "return_status": 2
+        },
+        "iterations": {
+            "global": 457,
+            "ipm": 457,
+            "mbr": 3,
+            "phase_loops": 1,
+            "total": 0
+        },
+        "performance": {
+            "condnum_time_ms": 0.8313370000000004,
+            "per_iteration_ms": 0.0,
+            "per_second": 0.0,
+            "solve_call_count": 461,
+            "solve_time_ms": 1.7051119999999986,
+            "total_ms": 16.533113
+        },
+        "run_number": 0,
+        "stats": [
+            {
+                "label": "A: same input, warm start",
+                "max_time_ms": 21.455102,
+                "mean_time_ms": 1.0645116000000001,
+                "median_time_ms": 0.12407950000000001,
+                "min_time_ms": 0.098907,
+                "run_number": 100,
+                "stddev_time_ms": 2.9671099166404473
+            },
+            {
+                "label": "D: same input, cold start",
+                "max_time_ms": 45.4725,
+                "mean_time_ms": 19.31617026,
+                "median_time_ms": 17.708669999999998,
+                "min_time_ms": 13.422227,
+                "run_number": 100,
+                "stddev_time_ms": 5.583897409012459
+            },
+            {
+                "label": "C: composition sweep ±5%, warm",
+                "max_time_ms": 25.68599,
+                "mean_time_ms": 8.931012359999997,
+                "median_time_ms": 7.906739,
+                "min_time_ms": 0.769493,
+                "run_number": 100,
+                "stddev_time_ms": 5.771365440497039
+            },
+            {
+                "label": "E: composition sweep ±5%, cold",
+                "max_time_ms": 25.418908,
+                "mean_time_ms": 9.46190862,
+                "median_time_ms": 8.8055235,
+                "min_time_ms": 1.673005,
+                "run_number": 100,
+                "stddev_time_ms": 4.756148094351227
+            }
+        ],
+        "system_id": "../../Resources/gems3k-fail/CASH+_G_csh_sol/csh_sol-dat.lst"
+    }
+]

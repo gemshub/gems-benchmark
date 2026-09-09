@@ -1,0 +1,68 @@
+[
+    {
+        "convergence": {
+            "condition_number": null,
+            "condition_number_diag": null,
+            "converged": false,
+            "dikin_criterion": 9.99999e-06,
+            "mass_balance_error": 6.297755225952727e-19,
+            "return_code": 0,
+            "return_status": 2
+        },
+        "iterations": {
+            "global": 155,
+            "ipm": 155,
+            "mbr": 30,
+            "phase_loops": 1,
+            "total": 0
+        },
+        "performance": {
+            "condnum_time_ms": 0.509849,
+            "per_iteration_ms": 0.0,
+            "per_second": 0.0,
+            "solve_call_count": 187,
+            "solve_time_ms": 1.9197780000000002,
+            "total_ms": 25.87862
+        },
+        "run_number": 0,
+        "stats": [
+            {
+                "label": "A: same input, warm start",
+                "max_time_ms": 49.7326,
+                "mean_time_ms": 27.162979979999996,
+                "median_time_ms": 26.512987000000003,
+                "min_time_ms": 21.077766,
+                "run_number": 100,
+                "stddev_time_ms": 3.440418913358552
+            },
+            {
+                "label": "D: same input, cold start",
+                "max_time_ms": 42.903224,
+                "mean_time_ms": 22.46091943,
+                "median_time_ms": 21.679237999999998,
+                "min_time_ms": 17.742066,
+                "run_number": 100,
+                "stddev_time_ms": 3.531392391983517
+            },
+            {
+                "label": "C: composition sweep ±5%, warm",
+                "max_time_ms": 24.034534,
+                "mean_time_ms": 8.543820750000002,
+                "median_time_ms": 8.474902499999999,
+                "min_time_ms": 1.430135,
+                "run_number": 100,
+                "stddev_time_ms": 5.566334333399354
+            },
+            {
+                "label": "E: composition sweep ±5%, cold",
+                "max_time_ms": 27.068117,
+                "mean_time_ms": 14.13397818000001,
+                "median_time_ms": 13.3475215,
+                "min_time_ms": 8.981627,
+                "run_number": 100,
+                "stddev_time_ms": 3.051070250707547
+            }
+        ],
+        "system_id": "../../Resources/gems3k-fail/CSHSnplus_G_CSH1_5_bufs/CSH1_5_bufs-dat.lst"
+    }
+]

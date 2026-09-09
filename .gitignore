@@ -8,4 +8,10 @@ install/
 tools/*.pro.user
 tools/*.pro.user.*
 .qmake.stash
+environment.yml
+try*
+ipmlog.txt
+CLAUDE.md
+examples/output/
 
+CLAUDE.md
